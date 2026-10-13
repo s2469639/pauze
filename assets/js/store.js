@@ -9,9 +9,9 @@
 
   // 시그니처 오일 4종 (노트 설명은 콘셉트 카피 — 확정 시 수정)
   var SCENTS = [
-    { key: 'greentea', name: 'Green Tea & Cedar',   kr: '그린티 & 시더',     band: '#A5AE98', img: 'assets/img/oil-greentea.webp',
+    { key: 'greentea', name: 'Green Tea & Cedar',   kr: '그린티 & 시더',     band: '#A5AE98', img: 'assets/img/oil-greentea.webp', mood: 'assets/img/scent-greentea.webp',
       line: '맑은 녹차 잎과 차분한 시더우드. 집중을 시작하는 아침에.', notes: ['녹차 잎 · 베르가못', '재스민 티', '시더우드'] },
-    { key: 'whitetea', name: 'White Tea & Neroli',  kr: '화이트티 & 네롤리', band: '#E3D3B4', img: 'assets/img/oil-whitetea.webp',
+    { key: 'whitetea', name: 'White Tea & Neroli',  kr: '화이트티 & 네롤리', band: '#E3D3B4', img: 'assets/img/oil-whitetea.webp', mood: 'assets/img/scent-whitetea.webp',
       line: '부드러운 백차와 네롤리의 은은한 꽃향. 가벼운 오후에.', notes: ['네롤리 · 레몬 블라썸', '화이트티', '소프트 머스크'] },
     { key: 'fig',      name: 'Fig & Soft Woods',    kr: '피그 & 소프트우드', band: '#8A8660', img: 'assets/img/oil-fig.webp',
       line: '무화과의 싱그러운 단맛과 포근한 나무 향. 책을 펼치는 시간에.', notes: ['무화과 잎', '무화과', '샌달우드 · 캐시미어우드'] },
@@ -21,11 +21,11 @@
 
   // 런칭 혜택가 = 정가의 정확히 85% (15% OFF)
   var PRODUCTS = [
-    { id: 'object',  name: '오브제 단품',     en: 'The Object',    desc: '타이머 본체 (컬러 택1) + 전용 패키지',          price: 68000, sale: 57800, hasColor: true,  hasScent: false,
-      includes: ['PAUZE 오브제 본체 1개 (컬러 택1)', '전용 패키지'] },
-    { id: 'starter', name: '스타터 세트',     en: 'Starter Set',   desc: '본체 + 시그니처 오일(10ml) + 기프트 패키지',     price: 85000, sale: 72250, hasColor: true,  hasScent: true, badge: 'Best',
-      includes: ['PAUZE 오브제 본체 1개 (컬러 택1)', '시그니처 프래그런스 오일 10ml (향 택1)', '기프트 패키지'] },
-    { id: 'oil',     name: '프래그런스 오일', en: 'Fragrance Oil', desc: '시그니처 향 오일 10ml 단품',                      price: 24000, sale: 24000, hasColor: false, hasScent: true,
+    { id: 'object',  name: '센트글라스',       en: 'Scentglass',    desc: '센트글라스 본체 (컬러 택1) + 전용 패키지',          price: 68000, sale: 57800, hasColor: true,  hasScent: false,
+      includes: ['센트글라스 본체 1개 (컬러 택1)', '전용 패키지'] },
+    { id: 'starter', name: '센트글라스 스타터 세트', en: 'Scentglass Starter Set', desc: '센트글라스 + 시그니처 오일(10ml) + 기프트 패키지',     price: 85000, sale: 72250, hasColor: true,  hasScent: true, badge: 'Best',
+      includes: ['센트글라스 본체 1개 (컬러 택1)', '시그니처 프래그런스 오일 10ml (향 택1)', '기프트 패키지'] },
+    { id: 'oil',     name: '시그니처 프래그런스 오일', en: 'Signature Fragrance Oil', desc: '센트글라스 전용 시그니처 향 오일 10ml',                      price: 24000, sale: 24000, hasColor: false, hasScent: true,
       includes: ['시그니처 프래그런스 오일 10ml (향 택1)'] }
   ];
 
