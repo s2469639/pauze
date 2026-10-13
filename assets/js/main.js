@@ -177,6 +177,7 @@ function setupReveals() {
     if (i === all.length - 1) return;
     gsap.fromTo(el, { scale: 1, filter: 'brightness(1)' }, { scale: 0.92, filter: 'brightness(0.82)', ease: 'none', scrollTrigger: { trigger: all[i + 1], start: 'top bottom', end: 'top 15%', scrub: true } });
   });
+  $$('.reviews-home .rv').forEach((el, i) => gsap.from(el, { y: 50, opacity: 0, duration: 1.2, delay: i * 0.1, ease: 'expo.out', scrollTrigger: { trigger: '.rv-cards', start: 'top 85%' } }));
   $$('.shop-card').forEach((el, i) => gsap.from(el, { y: 80, opacity: 0, duration: 1.3, delay: i * 0.12, ease: 'expo.out', scrollTrigger: { trigger: '.shop-grid', start: 'top 85%' } }));
   gsap.fromTo('.closing-img img', { scale: 1.3 }, { scale: 1, ease: 'none', scrollTrigger: { trigger: '.closing-img', start: 'top bottom', end: 'bottom top', scrub: true } });
   gsap.fromTo('.footer-mark', { yPercent: 40 }, { yPercent: 0, ease: 'none', scrollTrigger: { trigger: '.footer', start: 'top bottom', end: 'bottom bottom', scrub: true } });
@@ -210,6 +211,7 @@ function renderShop() {
       <div class="shop-info">
         <p class="shop-en">${p.en}</p>
         <h3><a href="product.html?id=${p.id}">${p.name}</a></h3>
+        ${(() => { const st = window.PAUZE.reviews.stats(p.id); return `<a class="card-stars" href="reviews.html?product=${p.id}">${window.PAUZE.reviews.stars(st.avg)} ${st.avg.toFixed(1)} (${st.count})</a>`; })()}
         <p class="shop-desc">${p.desc}</p>
         <div class="price">
           ${p.sale < p.price ? `<span class="off">${off(p)}%</span><s>${won(p.price)}</s>` : ''}
@@ -253,6 +255,16 @@ function renderShop() {
     });
     $('[data-buy]', card).addEventListener('click', () => { cart.add(p.id, card.dataset.color, qty, card.dataset.scent); location.href = 'checkout.html'; });
   });
+}
+
+/* ---------- reviews teaser ---------- */
+function renderHomeReviews() {
+  const RV = window.PAUZE.reviews; if (!RV) return;
+  const st = RV.stats();
+  $('[data-home-score]').innerHTML = `<b>${st.avg.toFixed(1)}</b>${RV.stars(st.avg, 'lg')}<small>리뷰 ${st.count}개</small>`;
+  const pick = ['o1', 's1', 'f2'].map((id) => RV.all.find((r) => r.id === id));
+  $('[data-home-reviews]').innerHTML = pick.map((r) => RV.card(r, { clamp: true, noHelpful: true })).join('');
+  RV.bind($('[data-home-reviews]'));
 }
 
 /* ---------- cart drawer (shared) ---------- */
@@ -300,6 +312,7 @@ function loadModel() {
 /* ---------- boot ---------- */
 async function boot() {
   renderShop();
+  renderHomeReviews();
   sizeCraft();
   addEventListener('resize', () => { sizeCraft(); ScrollTrigger.refresh(); });
 

@@ -207,6 +207,19 @@
       (x.sale < x.price ? '<em>' + P.off(x) + '%</em> ' : '') + won(x.sale) + '</span></a>';
   }).join('');
 
+  /* ---------- reviews ---------- */
+  (function () {
+    var RV = P.reviews; if (!RV) return;
+    var st = RV.stats(p.id);
+    $('[data-bb-stars]').innerHTML = RV.stars(st.avg) + ' ' + st.avg.toFixed(1) + ' · 리뷰 ' + st.count + '개';
+    $('[data-tab-count]').textContent = st.count;
+    $('[data-pdp-score]').innerHTML = '<b>' + st.avg.toFixed(1) + '</b>' + RV.stars(st.avg, 'lg') + '<small>리뷰 ' + st.count + '개</small>';
+    $('[data-pdp-score]').href = $('[data-pdp-more]').href = 'reviews.html?product=' + p.id;
+    var l = RV.list(p.id).slice().sort(function (a, b) { return (b.photos.length ? 1 : 0) - (a.photos.length ? 1 : 0) || b.helpful - a.helpful; }).slice(0, 4);
+    $('[data-pdp-reviews]').innerHTML = l.map(function (r) { return RV.card(r); }).join('');
+    RV.bind($('[data-pdp-reviews]'));
+  })();
+
   /* ---------- tabs (scroll spy) + mobile bar ---------- */
   var tabs = $$('.pdp-tabs a');
   var secs = tabs.map(function (a) { return $(a.getAttribute('href')); });

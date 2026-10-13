@@ -13,6 +13,7 @@
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,400;0,500;0,600;1,400;1,500&family=Noto+Serif+KR:wght@300;400;500&family=Noto+Sans+KR:wght@400;500;600&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="assets/css/style.css">
+<link rel="stylesheet" href="assets/css/reviews.css">
 <link rel="stylesheet" href="assets/css/product.css">
 </head>
 <body class="pdp">
@@ -23,6 +24,7 @@
     <a href="product.html?id=object" data-nav="object">Scentglass</a>
     <a href="product.html?id=starter" data-nav="starter">Starter Set</a>
     <a href="product.html?id=oil" data-nav="oil">Fragrance Oil</a>
+    <a href="reviews.html">Reviews</a>
   </nav>
   <button class="cart-btn" type="button" data-open-cart aria-label="장바구니 열기">Cart <span class="cart-count" data-cart-count>0</span></button>
 </header>
@@ -41,6 +43,7 @@
       <p class="eyebrow" data-en></p>
       <h1 data-name></h1>
       <p class="bb-desc" data-desc></p>
+      <a class="card-stars" href="#reviews" data-bb-stars></a>
       <div class="bb-price" data-price></div>
       <p class="bb-benefit" data-benefit></p>
 
@@ -78,6 +81,7 @@
     <a href="#detail" class="on">상세정보</a>
     <a href="#spec">구성 · 스펙</a>
     <a href="#ship">배송 · 교환</a>
+    <a href="#reviews">리뷰 <span data-tab-count></span></a>
     <a href="#qna">FAQ</a>
   </nav>
 
@@ -267,6 +271,16 @@
     </dl>
   </section>
 
+  <!-- ===== reviews ===== -->
+  <section class="pdp-sec" id="reviews">
+    <div class="rv-teaser-head">
+      <h2>리뷰</h2>
+      <a class="rv-teaser-score" data-pdp-score></a>
+    </div>
+    <div class="rv-pdp-list" data-pdp-reviews></div>
+    <p style="margin-top:24px"><a class="btn btn-ghost" data-pdp-more>리뷰 전체 보기 <i>→</i></a></p>
+  </section>
+
   <!-- ===== faq ===== -->
   <section class="pdp-sec faq" id="qna">
     <h2>FAQ</h2>
@@ -318,6 +332,7 @@
 <script src="assets/vendor/ScrollTrigger.min.js"></script>
 <script src="assets/js/store.js"></script>
 <script src="assets/js/cart-ui.js"></script>
+<script src="assets/js/reviews.js"></script>
 <script src="assets/js/product.js"></script>
 </body>
 </html>

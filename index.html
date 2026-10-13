@@ -15,6 +15,7 @@
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,400;0,500;0,600;1,400;1,500&family=Noto+Serif+KR:wght@300;400;500&family=Noto+Sans+KR:wght@400;500;600&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="assets/css/style.css">
+<link rel="stylesheet" href="assets/css/reviews.css">
 </head>
 <body class="is-loading">
 
@@ -36,6 +37,7 @@
     <a href="#craft">Craft</a>
     <a href="#spec">Spec</a>
     <a href="#shop">Shop</a>
+    <a href="reviews.html">Reviews</a>
   </nav>
   <button class="cart-btn" type="button" data-open-cart aria-label="장바구니 열기">
     Cart <span class="cart-count" data-cart-count>0</span>
@@ -229,6 +231,19 @@
     <div class="shop-grid" data-shop></div>
   </section>
 
+  <!-- REVIEWS -->
+  <section class="reviews-home solid" id="reviews">
+    <div class="rv-teaser-head">
+      <div>
+        <p class="eyebrow">Reviews</p>
+        <h2 class="split">먼저 머물러 본<br>사람들의 이야기.</h2>
+      </div>
+      <a class="rv-teaser-score" href="reviews.html" data-home-score></a>
+    </div>
+    <div class="rv-cards" data-home-reviews></div>
+    <p class="center" style="margin-top:32px"><a class="btn btn-ghost" href="reviews.html">리뷰 전체 보기 <i>→</i></a></p>
+  </section>
+
   <!-- 10 FAQ -->
   <section class="faq solid">
     <h2 class="center">자주 묻는 질문</h2>
@@ -279,6 +294,7 @@
 <script src="assets/vendor/lenis.min.js"></script>
 <script src="assets/js/store.js"></script>
 <script src="assets/js/cart-ui.js"></script>
+<script src="assets/js/reviews.js"></script>
 <!-- 3D + 페이지 스크립트 묶음 (원본: assets/js/main.js, scene.js → npm run build) -->
 <script src="assets/model/scentglass.glb.js"></script>
 <script src="assets/js/app.bundle.js"></script>
