@@ -112,6 +112,13 @@ export function createScene(canvas) {
   cap.add(disk);
   spin.add(cap);
 
+  // oil port on top of the upper cup, revealed when the cap lifts
+  const port = new THREE.Mesh(new THREE.CircleGeometry(0.075, 48), new THREE.MeshStandardMaterial({ color: '#2b2924', roughness: 0.6 }));
+  port.rotation.x = -Math.PI / 2; port.position.y = 0.9515;
+  const portRim = new THREE.Mesh(new THREE.TorusGeometry(0.083, 0.009, 16, 64), brass);
+  portRim.rotation.x = Math.PI / 2; portRim.position.y = 0.952;
+  spin.add(port, portRim);
+
   // glass (empty, frosted)
   const gpts = [];
   for (let i = 0; i <= 80; i++) { const y = -BULB + (2 * BULB * i) / 80; gpts.push([glassR(y), y]); }

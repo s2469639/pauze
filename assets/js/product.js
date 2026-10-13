@@ -94,7 +94,7 @@
     return '<button type="button" role="radio" data-color="' + c.key + '" style="--c:' + c.hex + '" aria-label="' + c.name + '"><i></i></button>';
   }).join('');
   $('[data-scents]').innerHTML = P.SCENTS.map(function (s) {
-    return '<button type="button" role="radio" data-scent="' + s.key + '" style="--band:' + s.band + '"><i></i>' + s.name + '</button>';
+    return '<button type="button" role="radio" data-scent="' + s.key + '" style="--band:' + s.band + '"><i></i>' + s.name + (s.badge ? '<small>추천</small>' : '') + '</button>';
   }).join('');
 
   function renderOptions() {
@@ -103,7 +103,7 @@
     $$('[data-scent]').forEach(function (b) { var on = b.dataset.scent === state.scent; b.classList.toggle('on', on); b.setAttribute('aria-checked', on); });
     $('[data-color-name]').textContent = c.name + ' · ' + c.mood;
     $('[data-scent-name]').textContent = s.kr;
-    $('[data-scent-line]').textContent = s.line;
+    $('[data-scent-line]').innerHTML = '<b>' + s.notes.join(' · ') + '</b>' + s.feel.join(', ');
     $('[data-qty]').textContent = state.qty;
     var total = won(p.sale * state.qty);
     $('[data-total]').textContent = total;
@@ -145,8 +145,9 @@
     var media = s.mood
       ? '<figure class="sc-media mood"><img src="' + s.mood + '" alt="' + s.name + ' 무드" loading="lazy"></figure>'
       : '<figure class="sc-media"><img src="' + s.img + '" alt="' + s.name + '" loading="lazy"></figure>';
-    return '<div class="scent-card" style="--band:' + s.band + '">' + media + '<div class="sc-body"><b>' + s.name + '</b><span>' + s.kr + '</span><p>' + s.line + '</p>' +
-      '<dl><div><dt>Top</dt><dd>' + s.notes[0] + '</dd></div><div><dt>Middle</dt><dd>' + s.notes[1] + '</dd></div><div><dt>Base</dt><dd>' + s.notes[2] + '</dd></div></dl></div></div>';
+    return '<div class="scent-card" style="--band:' + s.band + '">' + media + '<div class="sc-body">' + (s.badge ? '<em class="sc-badge">' + s.badge + ' · 시그니처 추천</em>' : '') + '<b>' + s.name + '</b><span>' + s.kr + '</span>' +
+      '<p class="sc-notes">' + s.notes.join(' · ') + '</p><p>' + s.desc + '</p>' +
+      '<ul class="sc-feel">' + s.feel.map(function (f) { return '<li>' + f + '</li>'; }).join('') + '</ul></div></div>';
   }).join('');
   if (p.id === 'starter') {
     $('[data-package-img]').src = 'assets/img/box-open.webp';

@@ -7,16 +7,28 @@
     { key: 'rose',    name: 'Dusty Rose',    hex: '#B98F8C', mood: '감성 포인트',   bg: '#EFE2DE', img: 'assets/img/color-rose.webp' }
   ];
 
-  // 시그니처 오일 4종 (노트 설명은 콘셉트 카피 — 확정 시 수정)
+  // 시그니처 오일 4종
   var SCENTS = [
-    { key: 'greentea', name: 'Green Tea & Cedar',   kr: '그린티 & 시더',     band: '#A5AE98', img: 'assets/img/oil-greentea.webp', mood: 'assets/img/scent-greentea.webp',
-      line: '맑은 녹차 잎과 차분한 시더우드. 집중을 시작하는 아침에.', notes: ['녹차 잎 · 베르가못', '재스민 티', '시더우드'] },
-    { key: 'whitetea', name: 'White Tea & Neroli',  kr: '화이트티 & 네롤리', band: '#E3D3B4', img: 'assets/img/oil-whitetea.webp', mood: 'assets/img/scent-whitetea.webp',
-      line: '부드러운 백차와 네롤리의 은은한 꽃향. 가벼운 오후에.', notes: ['네롤리 · 레몬 블라썸', '화이트티', '소프트 머스크'] },
-    { key: 'fig',      name: 'Fig & Soft Woods',    kr: '피그 & 소프트우드', band: '#8A8660', img: 'assets/img/oil-fig.webp',
-      line: '무화과의 싱그러운 단맛과 포근한 나무 향. 책을 펼치는 시간에.', notes: ['무화과 잎', '무화과', '샌달우드 · 캐시미어우드'] },
-    { key: 'lavender', name: 'Lavender & Linen',    kr: '라벤더 & 린넨',     band: '#A9A3AE', img: 'assets/img/oil-lavender.webp',
-      line: '깨끗한 린넨과 라벤더. 하루를 마무리하는 저녁에.', notes: ['라벤더', '코튼 플라워', '화이트 머스크'] }
+    { key: 'greentea', name: 'Green Tea & Cedar',  kr: '그린티 & 시더',      band: '#A5AE98', badge: 'Signature',
+      img: 'assets/img/oil-greentea.webp', mood: 'assets/img/scent-greentea.webp',
+      notes: ['그린티', '베르가못', '시더우드'],
+      desc: '차분한 녹차의 깨끗함에 시트러스의 산뜻함, 은은한 나무 향을 더했어요. 공부와 업무, 독서까지 어떤 순간에도 잘 어울리고, 세이지 그린 센트글라스와도 자연스럽게 이어지는 PAUZE의 시그니처 향이에요.',
+      feel: ['맑은 아침', '정돈된 책상', '조용한 집중'] },
+    { key: 'whitetea', name: 'White Tea & Neroli', kr: '화이트티 & 네롤리',  band: '#E3D3B4',
+      img: 'assets/img/oil-whitetea.webp', mood: 'assets/img/scent-whitetea.webp',
+      notes: ['화이트티', '네롤리', '머스크'],
+      desc: '깨끗한 차 향과 은은한 꽃 향이 어우러진 부드러운 향이에요. 누구에게나 편안하게 다가가 선물로도 좋아요.',
+      feel: ['햇살 드는 창가', '깨끗한 침구', '가벼운 휴식'] },
+    { key: 'fig',      name: 'Fig & Soft Woods',   kr: '피그 & 소프트우드',  band: '#8A8660',
+      img: 'assets/img/oil-fig.webp', mood: 'assets/img/scent-fig.webp',
+      notes: ['무화과 잎', '무화과 우디 노트', '샌들우드'],
+      desc: '초록 잎의 싱그러움과 부드러운 우디 향이 만나는 감각적인 향이에요. 조금 더 개성 있는 공간을 원할 때 추천해요.',
+      feel: ['감각적인 서재', '오후의 독서', '차분한 공간'] },
+    { key: 'lavender', name: 'Lavender & Linen',   kr: '라벤더 & 린넨',      band: '#A9A3AE',
+      img: 'assets/img/oil-lavender.webp', mood: 'assets/img/scent-lavender.webp',
+      notes: ['라벤더', '캐모마일', '소프트 머스크'],
+      desc: '하루를 마무리하는 저녁 루틴을 위한 편안한 향이에요. 라벤더와 캐모마일이 긴장을 풀고, 부드러운 머스크가 포근하게 감싸요.',
+      feel: ['저녁 조명', '따뜻한 침실', '하루의 마무리'] }
   ];
 
   // 런칭 혜택가 = 정가의 정확히 85% (15% OFF)

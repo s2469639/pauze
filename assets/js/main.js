@@ -110,14 +110,14 @@ function updateStage() {
     Object.assign(t, { x: 0, y: m ? 0.5 + hp * 0.6 : -0.02 + hp * 0.6, scale: (m ? 0.6 : 1) * (1 + hp * 0.12), flip: 0, cap: 0, mist: 0.35, spinSpeed: 0.28 });
   } else if (activeZone === 'ritual') {
     const f = progressOf($('#ritual'));
-    const capT = range(f, 0.04, 0.14) - range(f, 0.17, 0.25);
-    const flipT = ease(range(f, 0.26, 0.42));
-    const mistT = range(f, 0.44, 0.52) - range(f, 0.88, 0.97);
+    const capT = range(f, 0.04, 0.14) - range(f, 0.44, 0.54);
+    const flipT = ease(range(f, 0.62, 0.8));
+    const mistT = range(f, 0.8, 0.86) - range(f, 0.95, 1);
     Object.assign(t, {
       x: m ? 0 : 0.3, y: m ? 0.22 : 0, scale: m ? 0.56 : 1.05,
       cap: ease(capT), flip: flipT * Math.PI, mist: mistT, spinSpeed: 0.08,
     });
-    const step = f < 0.2 ? 0 : f < 0.44 ? 1 : f < 0.86 ? 2 : 3;
+    const step = f < 0.22 ? 0 : f < 0.42 ? 1 : f < 0.58 ? 2 : 3;
     $$('.ritual-steps li').forEach((li, i) => li.classList.toggle('on', i === step));
     $('.ritual-progress i').style.transform = `scaleY(${f})`;
   } else if (activeZone === 'colors') {
