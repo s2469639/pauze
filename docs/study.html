@@ -1,0 +1,478 @@
+<title>PAUZE 개발 노트</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Gowun+Batang:wght@400;700&family=IBM+Plex+Sans+KR:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap">
+<style>
+/* layout: 한 줄 본문 칼럼 + 섹션마다 '읽기 → 코드 → 만져보기' 순서 */
+:root{
+  --bg:#f7f6f1; --panel:#ecebe3; --fg:#23271f; --mute:#5d6357; --line:#d6d4c8;
+  --accent:#5f6f52; --brass:#9a7a44; --code-bg:#1f231c; --code-fg:#e7e5dc; --code-mute:#8f977f; --code-key:#c9a86a; --code-str:#a8c08e;
+  --display:"Gowun Batang",Georgia,serif; --body:"IBM Plex Sans KR",system-ui,sans-serif; --mono:"IBM Plex Mono",ui-monospace,monospace;
+}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--bg:#171a15;--panel:#20241d;--fg:#e8e6dc;--mute:#a3a897;--line:#343a2f;--accent:#a8bb94;--brass:#d2b27a;--code-bg:#0f120d;color-scheme:dark}}
+:root[data-theme="dark"]{--bg:#171a15;--panel:#20241d;--fg:#e8e6dc;--mute:#a3a897;--line:#343a2f;--accent:#a8bb94;--brass:#d2b27a;--code-bg:#0f120d;color-scheme:dark}
+body{background:var(--bg);color:var(--fg);font:400 16px/1.8 var(--body)}
+.wrap{max-width:860px;margin:0 auto;padding-inline:20px;padding-block:48px 120px}
+h1,h2,h3{font-family:var(--display);font-weight:700;line-height:1.3;text-wrap:balance;margin:0}
+h1{font-size:clamp(32px,5vw,46px)} h2{font-size:clamp(24px,3.4vw,32px);margin-bottom:14px} h3{font-size:19px;margin:28px 0 8px}
+p{margin:0 0 14px;max-width:66ch} .mute{color:var(--mute)}
+.kicker{font:600 12px var(--body);letter-spacing:.14em;text-transform:uppercase;color:var(--brass);margin-bottom:10px}
+section{padding-top:64px;margin-top:64px;border-top:1px solid var(--line)}
+nav.toc{margin:28px 0 0;display:grid;grid-template-columns:repeat(auto-fill,minmax(230px,1fr));gap:6px 20px}
+nav.toc a{color:var(--fg);text-decoration:none;font-size:14px;padding:6px 0;border-bottom:1px dashed var(--line)}
+nav.toc a span{color:var(--brass);font-family:var(--mono);margin-right:8px}
+code{font:500 .9em var(--mono);background:var(--panel);padding:1px 6px;border-radius:5px}
+pre{background:var(--code-bg);color:var(--code-fg);border-radius:12px;padding:16px 18px;overflow-x:auto;font:400 13px/1.7 var(--mono);margin:12px 0 18px}
+pre code{background:none;padding:0;font:inherit}
+pre .c{color:var(--code-mute)} pre .k{color:var(--code-key)} pre .s{color:var(--code-str)}
+.file{font:500 12px var(--mono);color:var(--mute);margin:18px 0 -6px}
+.lab{background:var(--panel);border-radius:16px;padding:18px;margin:14px 0 22px}
+.lab-h{display:flex;justify-content:space-between;gap:12px;flex-wrap:wrap;align-items:center;margin-bottom:10px;font:600 13px var(--body)}
+.lab-h span{color:var(--accent)}
+input[type=range]{width:100%;accent-color:var(--accent)}
+.row{display:flex;gap:10px;flex-wrap:wrap;align-items:center}
+button.b{font:500 13px var(--body);border:1px solid var(--line);background:var(--bg);color:var(--fg);border-radius:99px;padding:7px 14px;cursor:pointer}
+button.b:hover,button.b:focus-visible{border-color:var(--accent);outline:none}
+.read{font:500 12px var(--mono);color:var(--mute);display:flex;gap:14px;flex-wrap:wrap;margin-top:8px}
+.read b{color:var(--fg);font-weight:500}
+canvas.plot{width:100%;height:200px;display:block}
+.tip{border-left:3px solid var(--brass);padding:4px 0 4px 14px;margin:16px 0;color:var(--mute);font-size:15px}
+table{border-collapse:collapse;width:100%;font-size:14px} td,th{border-bottom:1px solid var(--line);padding:8px 10px;text-align:left;vertical-align:top} th{font-weight:600}
+.tbl{overflow-x:auto}
+/* scroll lab */
+.scroller{height:340px;overflow:auto;border-radius:12px;background:var(--bg);border:1px solid var(--line);position:relative}
+.sc-pin{height:900px;position:relative}
+.sc-stick{position:sticky;top:0;height:340px;display:grid;place-items:center;text-align:center;padding:0 20px}
+.sc-bar{position:absolute;left:16px;top:20px;bottom:20px;width:3px;background:var(--line);border-radius:3px}
+.sc-bar i{display:block;width:100%;background:var(--brass);transform-origin:top;transform:scaleY(0);height:100%}
+.sc-words{font:700 22px/1.6 var(--display);max-width:30ch}
+.sc-words span{opacity:.15;transition:opacity .2s}
+.sc-h{height:900px}
+.sc-h .sc-stick{overflow:hidden;place-items:center start}
+.track{display:flex;gap:14px;padding-left:20px;will-change:transform}
+.track div{flex:0 0 180px;height:200px;border-radius:12px;background:var(--panel);display:grid;place-items:center;font:700 18px var(--display);color:var(--accent)}
+.spacer{height:200px;display:grid;place-items:center;color:var(--mute);font-size:13px}
+#three{width:100%;height:380px;display:block;border-radius:12px;background:var(--bg);touch-action:pan-y}
+.diagram{overflow-x:auto} .diagram svg{min-width:640px;width:100%;height:auto}
+.diagram text{font:500 12px var(--body);fill:var(--fg)} .diagram .m{fill:var(--mute)}
+.diagram rect{fill:var(--panel);stroke:var(--line)} .diagram path{stroke:var(--accent);fill:none;stroke-width:1.5}
+ol.steps{padding-left:20px} ol.steps li{margin-bottom:8px}
+@media (prefers-reduced-motion:reduce){*{transition:none!important}}
+</style>
+
+<div class="wrap">
+  <p class="kicker">PAUZE Scentglass · 개발 노트</p>
+  <h1>스크롤 모션과 3D를<br>어떻게 만들었나</h1>
+  <p class="mute" style="margin-top:14px">실제 사이트 코드를 그대로 가져와 한 단계씩 풀었어요. 각 장의 회색 박스는 직접 움직여 볼 수 있는 실습이에요. 파일 경로는 저장소 기준입니다.</p>
+  <nav class="toc">
+    <a href="#map"><span>00</span>전체 구조 한눈에</a>
+    <a href="#progress"><span>01</span>스크롤을 숫자로 바꾸기</a>
+    <a href="#pin"><span>02</span>섹션 고정(sticky)과 진행 막대</a>
+    <a href="#text"><span>03</span>글자가 차오르는 효과</a>
+    <a href="#horizontal"><span>04</span>가로 스크롤 갤러리</a>
+    <a href="#gsap"><span>05</span>GSAP · ScrollTrigger · Lenis</a>
+    <a href="#three-basics"><span>06</span>three.js 무대 세우기</a>
+    <a href="#model"><span>07</span>GLB 모델 쪼개고 유리 넣기</a>
+    <a href="#material"><span>08</span>질감: 셰이더로 오돌토돌하게</a>
+    <a href="#damping"><span>09</span>부드러운 움직임의 비밀: 댐핑</a>
+    <a href="#lab3d"><span>10</span>3D 실습: 뒤집기·캡·분해·오일</a>
+    <a href="#ship"><span>11</span>배포까지: 번들·성능·접근성</a>
+    <a href="#practice"><span>12</span>연습 과제</a>
+  </nav>
+
+  <section id="map">
+    <p class="kicker">00</p>
+    <h2>전체 구조 한눈에</h2>
+    <p>메인 페이지는 <b>화면 뒤에 고정된 3D 캔버스 하나</b>와 그 위를 지나가는 HTML 섹션들로 이뤄져 있어요. 스크롤할 때마다 "지금 어떤 섹션이 화면 가운데 있고, 그 섹션을 몇 % 지났는지"를 계산해서 3D에게 목표값을 넘겨줍니다.</p>
+    <div class="diagram" role="img" aria-label="스크롤에서 3D 렌더까지 흐름도">
+      <svg viewBox="0 0 760 210">
+        <rect x="10" y="20" width="150" height="60" rx="10"/><text x="85" y="46" text-anchor="middle">스크롤 / 마우스</text><text x="85" y="64" text-anchor="middle" class="m">Lenis가 부드럽게</text>
+        <rect x="200" y="20" width="170" height="60" rx="10"/><text x="285" y="46" text-anchor="middle">main.js · updateStage()</text><text x="285" y="64" text-anchor="middle" class="m">진행도 f → 목표값</text>
+        <rect x="410" y="20" width="160" height="60" rx="10"/><text x="490" y="46" text-anchor="middle">stage.target</text><text x="490" y="64" text-anchor="middle" class="m">flip · cap · oil …</text>
+        <rect x="600" y="20" width="150" height="60" rx="10"/><text x="675" y="46" text-anchor="middle">scene.js · frame()</text><text x="675" y="64" text-anchor="middle" class="m">댐핑 → 렌더</text>
+        <path d="M160 50H198M370 50H408M570 50H598"/>
+        <rect x="200" y="125" width="170" height="60" rx="10"/><text x="285" y="151" text-anchor="middle">GSAP ScrollTrigger</text><text x="285" y="169" text-anchor="middle" class="m">글자·사진 등장</text>
+        <rect x="410" y="125" width="160" height="60" rx="10"/><text x="490" y="151" text-anchor="middle">store.js</text><text x="490" y="169" text-anchor="middle" class="m">상품·컬러 데이터</text>
+        <path d="M285 80V123M490 125V82"/>
+      </svg>
+    </div>
+    <div class="tbl"><table>
+      <tr><th>파일</th><th>하는 일</th></tr>
+      <tr><td><code>assets/js/main.js</code></td><td>스크롤 계산, 섹션별 연출, 텍스트·사진 등장, 장바구니 UI 연결</td></tr>
+      <tr><td><code>assets/js/scene.js</code></td><td>three.js 3D: 모델, 재질, 유리, 캡, 오일 방울, 분해도</td></tr>
+      <tr><td><code>assets/js/viewer.js</code></td><td>상세페이지 3D 뷰어(드래그 회전, 버튼)</td></tr>
+      <tr><td><code>assets/model/scentglass.glb.js</code></td><td>GLB 모델을 base64 문자열로 담은 파일 (file://에서도 열리게)</td></tr>
+      <tr><td><code>assets/js/app.bundle.js</code></td><td>esbuild로 main.js + scene.js + three를 묶은 결과물</td></tr>
+    </table></div>
+  </section>
+
+  <section id="progress">
+    <p class="kicker">01</p>
+    <h2>스크롤을 숫자로 바꾸기</h2>
+    <p>모든 스크롤 연출의 출발점은 <b>"이 섹션을 몇 % 지났나"</b>를 0~1 숫자로 만드는 거예요. 섹션 높이가 화면보다 크면, 섹션의 위쪽 끝이 화면 위로 얼마나 올라갔는지로 계산할 수 있어요.</p>
+    <p class="file">assets/js/main.js</p>
+<pre><code><span class="k">const</span> clamp = (v, a = <span class="s">0</span>, b = <span class="s">1</span>) =&gt; Math.min(b, Math.max(a, v));
+<span class="c">// v가 a~b 구간 중 어디쯤인지 0~1로 (구간 밖이면 0 또는 1)</span>
+<span class="k">const</span> range = (v, a, b) =&gt; clamp((v - a) / (b - a));
+<span class="c">// 천천히 시작해서 천천히 끝나는 곡선 (easeInOutCubic)</span>
+<span class="k">const</span> ease = (t) =&gt; (t &lt; <span class="s">0.5</span> ? <span class="s">4</span> * t * t * t : <span class="s">1</span> - Math.pow(-<span class="s">2</span> * t + <span class="s">2</span>, <span class="s">3</span>) / <span class="s">2</span>);
+
+<span class="k">function</span> progressOf(el) {
+  <span class="k">const</span> r = el.getBoundingClientRect();          <span class="c">// 화면 기준 섹션 위치</span>
+  <span class="k">return</span> clamp(-r.top / Math.max(<span class="s">1</span>, r.height - innerHeight));
+}</code></pre>
+    <p>그다음 한 섹션의 진행도 <code>f</code> 하나로 여러 동작의 타이밍을 나눠요. 아래는 메인의 "향을 더하는 작은 루틴" 섹션 코드 그대로예요. <code>range(f, 0.03, 0.11)</code>은 "진행도 3%~11% 사이에서 0→1"이라는 뜻이고, 두 구간을 빼면 "올라갔다 내려오는" 모양이 돼요.</p>
+<pre><code><span class="k">const</span> f = progressOf($(<span class="s">'#ritual'</span>));
+<span class="k">const</span> capT  = range(f, <span class="s">0.03</span>, <span class="s">0.11</span>) - range(f, <span class="s">0.38</span>, <span class="s">0.46</span>);           <span class="c">// 캡 열렸다 닫힘</span>
+<span class="k">const</span> flipT = ease(range(f, <span class="s">0.5</span>, <span class="s">0.64</span>)) + ease(range(f, <span class="s">0.8</span>, <span class="s">0.92</span>)); <span class="c">// 뒤집고, 다시 뒤집음</span>
+<span class="k">const</span> mistT = range(f, <span class="s">0.64</span>, <span class="s">0.7</span>) - range(f, <span class="s">0.8</span>, <span class="s">0.86</span>);        <span class="c">// 향 안개 켜졌다 꺼짐</span>
+<span class="k">const</span> step  = f &lt; <span class="s">.17</span> ? <span class="s">0</span> : f &lt; <span class="s">.37</span> ? <span class="s">1</span> : f &lt; <span class="s">.48</span> ? <span class="s">2</span> : f &lt; <span class="s">.78</span> ? <span class="s">3</span> : <span class="s">4</span>;   <span class="c">// 왼쪽 문구 01~05</span>
+stage.target.cap  = ease(capT);
+stage.target.flip = flipT * Math.PI;   <span class="c">// 1 = 180도</span></code></pre>
+    <div class="lab">
+      <div class="lab-h">실습 · 진행도 f를 움직여 보세요 <span id="stepName">01 캡을 열어주세요</span></div>
+      <canvas class="plot" id="plot" aria-label="진행도에 따른 캡·뒤집기·안개 값 그래프"></canvas>
+      <input type="range" id="f" min="0" max="1" step="0.001" value="0.25" aria-label="진행도 f">
+      <div class="read"><span>f <b id="rf">0.25</b></span><span style="color:var(--brass)">cap <b id="rc"></b></span><span style="color:var(--accent)">flip <b id="rl"></b>°</span><span>mist <b id="rm"></b></span></div>
+    </div>
+    <p class="tip">핵심: 연출을 "시간"이 아니라 "스크롤 위치"의 함수로 만들면, 사용자가 위로 다시 올려도 정확히 거꾸로 재생돼요. 별도 상태 관리가 필요 없어요.</p>
+  </section>
+
+  <section id="pin">
+    <p class="kicker">02</p>
+    <h2>섹션 고정(sticky)과 진행 막대</h2>
+    <p>"화면이 멈춘 채로 3D만 바뀌는" 느낌은 자바스크립트가 아니라 CSS 두 줄로 만들어요. 섹션을 화면보다 아주 길게(예: 560vh) 만들고, 안쪽 내용을 <code>position: sticky</code>로 화면에 붙여 두는 거예요. 섹션이 지나가는 동안 내용은 붙어 있고, 그 사이 진행도 f가 0→1로 흘러가요.</p>
+    <p class="file">assets/css/style.css</p>
+<pre><code>.ritual     { height: <span class="s">560vh</span>; }                     <span class="c">/* 스크롤할 거리 = 연출 길이 */</span>
+.ritual-pin { position: <span class="k">sticky</span>; top: <span class="s">0</span>; height: <span class="s">100vh</span>; } <span class="c">/* 화면에 붙어 있는 무대 */</span></code></pre>
+    <div class="lab">
+      <div class="lab-h">실습 · 박스 안에서 스크롤해 보세요 <span id="pinRead">f = 0.00</span></div>
+      <div class="scroller" id="sc1" tabindex="0" aria-label="sticky 실습 스크롤 영역">
+        <div class="spacer">↓ 스크롤</div>
+        <div class="sc-pin" id="pin1">
+          <div class="sc-stick"><div class="sc-bar"><i id="bar1"></i></div><div class="sc-words" id="words1">해야 할 일과 생각이 끊이지 않는 하루. 잠깐 멈춰 향을 느끼는 것만으로도 일상의 리듬은 조금 달라질 수 있습니다.</div></div>
+        </div>
+        <div class="spacer">끝 · 다시 위로 올려 보세요</div>
+      </div>
+    </div>
+  </section>
+
+  <section id="text">
+    <p class="kicker">03</p>
+    <h2>글자가 차오르는 효과</h2>
+    <p>위 실습의 문장이 단어마다 진해졌죠? 문장을 단어 단위 <code>&lt;span&gt;</code>으로 쪼갠 뒤, 진행도에 맞춰 앞 단어부터 불투명하게 만든 거예요. 실제 사이트는 같은 일을 GSAP에 맡겼어요.</p>
+    <p class="file">assets/js/main.js</p>
+<pre><code><span class="c">// 1) 쪼개기: "향은 계속 퍼지고" → &lt;span class="w"&gt;향은&lt;/span&gt; &lt;span class="w"&gt;계속&lt;/span&gt; …</span>
+el.innerHTML = el.textContent.trim().split(<span class="s">/\s+/</span>)
+  .map((w) =&gt; <span class="s">`&lt;span class="w"&gt;${w}&lt;/span&gt;`</span>).join(<span class="s">' '</span>);
+
+<span class="c">// 2) 스크롤에 묶기: scrub:true = 스크롤 위치가 곧 애니메이션 진행도</span>
+gsap.fromTo($$(<span class="s">'.w'</span>, el), { opacity: <span class="s">0.12</span> }, {
+  opacity: <span class="s">1</span>, stagger: <span class="s">0.05</span>, ease: <span class="s">'none'</span>,
+  scrollTrigger: { trigger: el, start: <span class="s">'top 80%'</span>, end: <span class="s">'bottom 45%'</span>, scrub: <span class="k">true</span> },
+});</code></pre>
+    <h3>제목이 아래에서 올라오는 효과</h3>
+    <p>제목은 줄 단위로 쪼개서, 바깥 span은 <code>overflow: hidden</code>(창문), 안쪽 span은 <code>yPercent: 110</code>(창문 아래)에서 0으로 올려요. 창문 밖에 있다가 올라오니 "잘려서 등장"하는 느낌이 나요.</p>
+<pre><code>.line &gt; span { display: block; }  .line { overflow: <span class="k">hidden</span>; }
+gsap.from($$(<span class="s">'.line &gt; span'</span>, el), { yPercent: <span class="s">110</span>, duration: <span class="s">1.3</span>, ease: <span class="s">'expo.out'</span>, stagger: <span class="s">0.09</span>,
+  scrollTrigger: { trigger: el, start: <span class="s">'top 85%'</span> } });  <span class="c">// scrub 없음 = 한 번 재생</span></code></pre>
+    <p class="tip"><b>scrub</b>이 있으면 스크롤과 함께 앞뒤로 움직이고, 없으면 지점을 지날 때 한 번 재생돼요. "읽는 문장"은 scrub, "등장하는 제목"은 한 번 재생이 자연스러워요.</p>
+  </section>
+
+  <section id="horizontal">
+    <p class="kicker">04</p>
+    <h2>가로 스크롤 갤러리</h2>
+    <p>세로로 스크롤하는데 사진이 옆으로 흐르는 섹션이에요. 원리는 02장과 같아요. 섹션 높이를 "가로로 움직일 거리 + 화면 높이"로 정하고, 진행도만큼 트랙을 왼쪽으로 밀어요.</p>
+    <p class="file">assets/js/main.js</p>
+<pre><code><span class="k">function</span> sizeCraft() {
+  <span class="k">const</span> dist = track.scrollWidth - innerWidth;            <span class="c">// 넘치는 가로 길이</span>
+  craft.style.height = <span class="s">`${dist + innerHeight}px`</span>;       <span class="c">// 그만큼 세로로 스크롤하게</span>
+}
+<span class="k">function</span> updateCraft() {
+  <span class="k">const</span> p = progressOf(craft);
+  track.style.transform = <span class="s">`translate3d(${-p * dist}px,0,0)`</span>;
+}</code></pre>
+    <div class="lab">
+      <div class="lab-h">실습 · 세로로 스크롤하면 가로로 흘러요</div>
+      <div class="scroller" id="sc2" tabindex="0" aria-label="가로 스크롤 실습 영역">
+        <div class="spacer">↓ 스크롤</div>
+        <div class="sc-h" id="pin2"><div class="sc-stick"><div class="track" id="track2"><div>Silhouette</div><div>Brass</div><div>Glass</div><div>Wordmark</div><div>Ceramic</div><div>Inside</div></div></div></div>
+        <div class="spacer">끝</div>
+      </div>
+    </div>
+    <p class="tip">사진 안쪽 이미지를 반대 방향으로 조금 더 밀면(패럴랙스) 깊이감이 생겨요. 실제 코드의 <code>translate3d(${k * -6}%,0,0) scale(1.14)</code>가 그 부분이에요.</p>
+  </section>
+
+  <section id="gsap">
+    <p class="kicker">05</p>
+    <h2>GSAP · ScrollTrigger · Lenis 역할 나누기</h2>
+    <div class="tbl"><table>
+      <tr><th>도구</th><th>맡은 일</th><th>이 프로젝트에서</th></tr>
+      <tr><td>GSAP</td><td>값을 시간에 따라 부드럽게 바꾸는 엔진</td><td>로딩 화면, 제목 등장, 버튼 자석 효과</td></tr>
+      <tr><td>ScrollTrigger</td><td>"이 요소가 화면 어디에 오면" 애니메이션을 재생·되감기</td><td>단어 차오르기, 사진 확대, 리뷰 카드 등장</td></tr>
+      <tr><td>Lenis</td><td>휠 스크롤을 관성 있게 부드럽게</td><td>사이트 전체 스크롤</td></tr>
+      <tr><td>직접 계산 (01장)</td><td>매 프레임 진행도 → 3D 목표값</td><td>리추얼, 컬러, 분해도 섹션</td></tr>
+    </table></div>
+    <p style="margin-top:16px">Lenis가 스크롤을 대신 굴리기 때문에, ScrollTrigger가 위치를 놓치지 않게 둘을 같은 시계에 묶어줘야 해요.</p>
+<pre><code>lenis = <span class="k">new</span> Lenis({ lerp: <span class="s">0.09</span> });             <span class="c">// 0.09 = 매 프레임 남은 거리의 9%씩 따라감</span>
+lenis.on(<span class="s">'scroll'</span>, ScrollTrigger.update);         <span class="c">// 스크롤할 때마다 트리거 위치 갱신</span>
+gsap.ticker.add((t) =&gt; lenis.raf(t * <span class="s">1000</span>));   <span class="c">// GSAP의 프레임 시계로 Lenis를 돌림</span>
+gsap.ticker.lagSmoothing(<span class="s">0</span>);</code></pre>
+    <p class="tip">3D 섹션은 왜 ScrollTrigger 대신 직접 계산했을까요? 3D는 매 프레임 그려야 하고 값이 여러 개(뒤집기·캡·위치·크기)라서, 한 함수(<code>updateStage</code>)에서 한 번에 정하는 편이 읽기 쉽고 섹션끼리 충돌하지 않아요.</p>
+  </section>
+
+  <section id="three-basics">
+    <p class="kicker">06</p>
+    <h2>three.js 무대 세우기</h2>
+    <p>three.js 장면은 항상 다섯 가지로 시작해요. <b>렌더러</b>(캔버스에 그리는 화가), <b>장면</b>(무대), <b>카메라</b>(관객의 눈), <b>조명</b>, <b>물체</b>.</p>
+    <p class="file">assets/js/scene.js</p>
+<pre><code><span class="k">const</span> renderer = <span class="k">new</span> THREE.WebGLRenderer({ canvas, antialias: <span class="k">true</span>, alpha: <span class="k">true</span> }); <span class="c">// alpha: 배경 투명 → 페이지 색이 비침</span>
+renderer.setPixelRatio(Math.min(devicePixelRatio, <span class="s">2</span>));   <span class="c">// 레티나 3배는 너무 무거워서 2로 제한</span>
+renderer.toneMapping = THREE.NeutralToneMapping;             <span class="c">// 밝은 부분이 하얗게 날아가지 않게</span>
+
+<span class="k">const</span> scene = <span class="k">new</span> THREE.Scene();
+<span class="c">// 주변 반사용 '가짜 방' 환경맵 — 금속(브라스)과 유리가 반짝이는 이유</span>
+scene.environment = <span class="k">new</span> THREE.PMREMGenerator(renderer).fromScene(<span class="k">new</span> RoomEnvironment(), <span class="s">0.035</span>).texture;
+
+<span class="k">const</span> camera = <span class="k">new</span> THREE.PerspectiveCamera(<span class="s">28</span>, <span class="s">1</span>, <span class="s">0.1</span>, <span class="s">50</span>);  <span class="c">// 화각 28° = 망원 느낌, 왜곡이 적어 제품샷에 좋음</span>
+<span class="c">// 조명 3점: 왼쪽 위 따뜻한 키 라이트, 오른쪽 보조광, 뒤쪽 림 라이트(윤곽선)</span></code></pre>
+    <h3>물체를 그룹으로 감싸기</h3>
+    <p>움직임마다 그룹을 하나씩 두면 계산이 단순해져요. 바깥 그룹은 뒤집기(Z축 회전), 안쪽 그룹은 천천히 도는 것(Y축 회전)만 맡아요. 둘을 한 물체에 섞으면 회전 순서가 꼬여요.</p>
+<pre><code><span class="k">const</span> flip = <span class="k">new</span> THREE.Group();   <span class="c">// 뒤집기 담당</span>
+<span class="k">const</span> spin = <span class="k">new</span> THREE.Group();   <span class="c">// 자전 담당</span>
+flip.add(spin); scene.add(flip);
+<span class="c">// 매 프레임: flip.rotation.z = state.flip;  spin.rotation.y = state.spin;</span></code></pre>
+  </section>
+
+  <section id="model">
+    <p class="kicker">07</p>
+    <h2>GLB 모델 쪼개고, 유리 넣기</h2>
+    <p>받은 GLB는 <b>메시 하나에 재질 하나</b>로 통째로 붙어 있었어요. 그대로는 캡만 열거나 유리만 투명하게 할 수 없어서, 코드로 잘라냈어요.</p>
+    <h3>1) file://에서도 열리게 base64로</h3>
+    <p>브라우저는 더블클릭으로 연 HTML에서 다른 파일을 fetch하지 못하게 막아요. 그래서 GLB를 base64 문자열로 바꿔 <code>&lt;script&gt;</code>로 불러오고, 그 문자열을 다시 바이트로 돌려서 파싱해요.</p>
+<pre><code><span class="k">const</span> bin = atob(window.PAUZE_GLB), buf = <span class="k">new</span> Uint8Array(bin.length);
+<span class="k">for</span> (<span class="k">let</span> i = <span class="s">0</span>; i &lt; bin.length; i++) buf[i] = bin.charCodeAt(i);
+<span class="k">new</span> GLTFLoader().parse(buf.buffer, <span class="s">''</span>, onLoad);</code></pre>
+    <h3>2) 삼각형을 높이로 분류하기</h3>
+    <p>3D 모델은 결국 삼각형 수만 개예요. 삼각형마다 세 꼭짓점 y값의 평균(중심 높이)을 보고, <b>캡(위 끝)·위 컵·유리 허리·아래 컵</b>으로 나눴어요. 허리(|y| &lt; 0.286)와 캡(y &gt; 0.885)은 버리고 새로 만들어요.</p>
+<pre><code><span class="k">for</span> (<span class="k">let</span> t = <span class="s">0</span>; t &lt; pos.count; t += <span class="s">3</span>) {
+  <span class="k">const</span> cy = (pos.getY(t) + pos.getY(t + <span class="s">1</span>) + pos.getY(t + <span class="s">2</span>)) / <span class="s">3</span>;
+  <span class="k">if</span> (cy &gt; CUT || Math.abs(cy) &lt; GLASS) <span class="k">continue</span>;   <span class="c">// 캡·허리는 버림</span>
+  keep[cy &gt; <span class="s">0</span> ? <span class="s">0</span> : <span class="s">1</span>].push(t);                       <span class="c">// 위 컵 / 아래 컵</span>
+}</code></pre>
+    <p class="mute">이 기준 숫자(0.885, 0.286)는 모델의 꼭짓점을 높이별로 훑어서 "반지름이 갑자기 바뀌는 지점"을 찾아 정했어요.</p>
+    <h3>3) 유리는 '돌림판'으로 새로 만들기</h3>
+    <p>모래시계 허리처럼 축을 중심으로 대칭인 모양은 <code>LatheGeometry</code>(도자기 물레)로 만들어요. 옆모습 선(반지름, 높이) 몇 개만 주면 360° 돌려서 입체를 만들어 줘요. 원래 모델의 허리 반지름을 재서 그대로 따라 그렸어요.</p>
+<pre><code><span class="k">const</span> prof = [[<span class="s">0</span>, <span class="s">0.098</span>], [<span class="s">0.08</span>, <span class="s">0.135</span>], [<span class="s">0.16</span>, <span class="s">0.19</span>], [<span class="s">0.24</span>, <span class="s">0.25</span>], [<span class="s">0.3</span>, <span class="s">0.298</span>]]; <span class="c">// [높이, 반지름]</span>
+<span class="k">const</span> glassGeo = <span class="k">new</span> THREE.LatheGeometry(points, <span class="s">128</span>);   <span class="c">// 128 = 둘레를 몇 조각으로</span></code></pre>
+    <h3>4) 유리는 4겹으로 칠하기</h3>
+    <p>WebGL의 투명은 진짜 굴절이 아니라 "겹쳐 칠하기"라서, 유리처럼 보이려면 역할을 나눠 여러 번 그려요.</p>
+    <div class="tbl"><table>
+      <tr><th>겹</th><th>하는 일</th><th>포인트</th></tr>
+      <tr><td>안쪽 벽</td><td>뒷면(BackSide)을 옅게</td><td>유리 두께가 있다는 느낌</td></tr>
+      <tr><td>서리(frost)</td><td>우윳빛 노이즈</td><td>프로스트 유리의 뿌연 질감</td></tr>
+      <tr><td>두께 띠</td><td>가장자리일수록 진하게</td><td>프레넬: 비스듬히 볼수록 유리를 더 많이 통과</td></tr>
+      <tr><td>반사</td><td>빛만 <b>더하기</b> 블렌딩</td><td>배경을 어둡게 만들지 않고 하이라이트만 얹음</td></tr>
+    </table></div>
+<pre><code><span class="c">// 프레넬: 표면이 나를 정면으로 보면 d=1, 옆으로 비스듬하면 d→0</span>
+<span class="k">float</span> d = abs(dot(normalize(vN), normalize(vV)));
+<span class="k">float</span> edge = smoothstep(<span class="s">0.45</span>, <span class="s">0.05</span>, d);   <span class="c">// 가장자리일수록 1</span></code></pre>
+    <p class="tip">처음엔 반사 겹을 일반 블렌딩으로 그렸더니 유리가 은색 크롬처럼 보였어요. "빛만 더하고, 투명도(알파)는 건드리지 않는" 커스텀 블렌딩으로 바꿔서 해결했어요.</p>
+  </section>
+
+  <section id="material">
+    <p class="kicker">08</p>
+    <h2>질감: 셰이더로 오돌토돌하게</h2>
+    <p>모델에 들어 있던 텍스처는 평평한 색 그림이라 빛을 받아도 요철이 안 보였어요. 그래서 three.js 기본 재질의 셰이더 코드 중간에 <b>우리 코드 몇 줄을 끼워 넣는</b> <code>onBeforeCompile</code>을 썼어요.</p>
+    <h3>컬러 바꾸기: 세이지 부분만 골라 칠하기</h3>
+    <p>텍스처 한 장에 세라믹·브라스·유리 색이 섞여 있어서, 픽셀 색을 보고 "세이지 세라믹인 곳"만 골라 새 컬러를 입혀요. 브라스는 따뜻한 색(빨강−파랑이 큼)이라 제외되고, 유리는 너무 밝아서 제외돼요.</p>
+<pre><code><span class="k">float</span> warm = sc.r - sc.b;                                  <span class="c">// 따뜻할수록 큼 → 브라스</span>
+<span class="k">float</span> lum  = dot(sc, vec3(<span class="s">0.299</span>, <span class="s">0.587</span>, <span class="s">0.114</span>));         <span class="c">// 밝기 → 유리</span>
+pzSage = (<span class="s">1.</span> - smoothstep(<span class="s">.09</span>, <span class="s">.16</span>, warm)) * (<span class="s">1.</span> - smoothstep(<span class="s">.62</span>, <span class="s">.70</span>, lum)) * …;
+diffuseColor.rgb = mix(원래색, uTint * 원래색 / 세이지기준색, pzSage);  <span class="c">// 명암은 살리고 색만 교체</span></code></pre>
+    <h3>요철: 노이즈로 법선(normal) 흔들기</h3>
+    <p>빛은 표면의 <b>법선 방향</b>으로 밝기를 계산해요. 실제로 모양을 울퉁불퉁하게 만들지 않고, 법선만 노이즈로 살짝 기울이면 오돌토돌해 보여요(범프 매핑). 고운 입자 + 큰 얼룩 + 드문드문 파인 핀홀을 섞었어요.</p>
+<pre><code><span class="k">float</span> ceramicHeight(vec3 p){
+  <span class="k">float</span> g = vnoise(p*<span class="s">260.</span>)*<span class="s">.55</span> + vnoise(p*<span class="s">120.</span>)*<span class="s">.35</span> + vnoise(p*<span class="s">30.</span>)*<span class="s">.6</span>; <span class="c">// 고운 결 + 중간 결 + 얼룩</span>
+  <span class="k">return</span> g - pits(p*<span class="s">48.</span>)*<span class="s">1.6</span>;                                        <span class="c">// 핀홀은 움푹</span>
+}
+normal = bumpPerturb(normal, ceramicHeight(vObj) * <span class="s">0.0016</span>, faceDirection);</code></pre>
+    <p class="tip">노이즈 좌표로 화면 좌표가 아니라 <b>물체 좌표(vObj)</b>를 쓴 게 포인트예요. 그래서 물체가 돌아도 질감이 물체에 붙어서 같이 돌아요.</p>
+  </section>
+
+  <section id="damping">
+    <p class="kicker">09</p>
+    <h2>부드러운 움직임의 비밀: 댐핑</h2>
+    <p>스크롤은 뚝뚝 끊겨서 들어와요. 이 값을 3D에 그대로 꽂으면 모래시계가 덜컥거려요. 그래서 값을 두 벌로 나눠요. <code>target</code>은 "가고 싶은 곳", <code>state</code>는 "지금 있는 곳". 매 프레임 남은 거리의 일정 비율만큼만 다가가요.</p>
+    <p class="file">assets/js/scene.js · frame()</p>
+<pre><code><span class="k">const</span> dt = Math.min(clock.getDelta(), <span class="s">0.05</span>);
+<span class="k">const</span> k  = <span class="s">1</span> - Math.pow(<span class="s">0.0009</span>, dt);      <span class="c">// 프레임레이트와 무관한 비율 (60fps든 120fps든 같은 속도)</span>
+<span class="k">for</span> (<span class="k">const</span> key <span class="k">of</span> [<span class="s">'x'</span>, <span class="s">'y'</span>, <span class="s">'scale'</span>, <span class="s">'flip'</span>, <span class="s">'cap'</span>, <span class="s">'explode'</span>])
+  state[key] += (target[key] - state[key]) * k;
+flip.rotation.z = state.flip;
+renderer.render(scene, camera);
+requestAnimationFrame(frame);</code></pre>
+    <p>컬러 변경도 똑같이 <code>color.lerp(목표색, k)</code>로 섞어서 색이 스르륵 바뀌어요. 아래 10장 실습에서 "댐핑 끄기"를 눌러 차이를 직접 느껴보세요.</p>
+  </section>
+
+  <section id="lab3d">
+    <p class="kicker">10</p>
+    <h2>3D 실습: 뒤집기 · 캡 · 분해 · 오일</h2>
+    <p class="mute">실제 모델 대신 같은 원리로 만든 간단한 모래시계예요. 슬라이더는 메인 페이지의 스크롤 진행도와 똑같은 공식(01장)을 써요.</p>
+    <div class="lab">
+      <canvas id="three" aria-label="모래시계 3D 실습. 드래그하면 회전해요"></canvas>
+      <div class="lab-h" style="margin-top:12px">리추얼 진행도 (스크롤 대신) <span id="step3">01 캡을 열어주세요</span></div>
+      <input type="range" id="f3" min="0" max="1" step="0.001" value="0" aria-label="리추얼 진행도">
+      <div class="lab-h" style="margin-top:8px">분해도</div>
+      <input type="range" id="ex3" min="0" max="1" step="0.01" value="0" aria-label="분해 정도">
+      <div class="row" style="margin-top:12px">
+        <button class="b" id="drops">오일 3방울</button>
+        <button class="b" id="damp" aria-pressed="false">댐핑 끄기</button>
+        <button class="b" data-col="#A5AE98">Misty Sage</button><button class="b" data-col="#C8B8A4">Oatmeal</button><button class="b" data-col="#777C73">Stone</button><button class="b" data-col="#B98F8C">Rose</button>
+      </div>
+      <p class="read" id="three-msg"></p>
+    </div>
+    <h3>오일 방울은 세 구간으로 쪼갰어요</h3>
+    <ol class="steps">
+      <li><b>맺힘 (0.75초)</b> 스포이드 끝에서 크기가 0.35→1로 커지고, 아래로 살짝 길어지며 사인파로 흔들려요.</li>
+      <li><b>낙하 (0.42초)</b> 위치는 <code>f*f</code>(가속도), 모양은 세로로 늘어나요. 부피가 같아 보이게 가로는 <code>1/√늘어남</code>만큼 줄여요.</li>
+      <li><b>충돌 (0.2초)</b> 납작하게 퍼지며 사라지고, 같은 순간 물결 고리가 커지면서 투명해져요. 주입구의 오일 웅덩이도 한 단계씩 차올라요.</li>
+    </ol>
+    <p class="tip">방울은 공 모양이 아니라 물방울 단면(아래는 둥글고 위는 뾰족)을 LatheGeometry로 돌려 만들었어요. 반사 겹을 하나 더 얹어서 진짜 액체처럼 반짝이게 했어요.</p>
+  </section>
+
+  <section id="ship">
+    <p class="kicker">11</p>
+    <h2>배포까지: 번들 · 성능 · 접근성</h2>
+    <div class="tbl"><table>
+      <tr><th>문제</th><th>해결</th></tr>
+      <tr><td>더블클릭(file://)으로 열면 3D가 안 뜸 (ES 모듈 CORS)</td><td>esbuild로 main.js + three를 일반 스크립트 하나(<code>app.bundle.js</code>)로 묶음. <code>npm run build</code></td></tr>
+      <tr><td>GLB 5.4MB로 무거움</td><td>텍스처 JPG 재압축 → 2.2MB</td></tr>
+      <tr><td>3D가 안 보이는 섹션에서도 계속 그림</td><td>3D 섹션이 화면에 없으면 <code>render()</code> 건너뜀</td></tr>
+      <tr><td>고해상도 폰에서 버벅임</td><td><code>setPixelRatio(min(dpr, 2))</code></td></tr>
+      <tr><td>상세페이지 첫 로딩이 느려짐</td><td>3D 뷰어는 페이지가 다 뜬 뒤(<code>load</code> 이벤트) 따로 불러옴</td></tr>
+      <tr><td>멀미에 민감한 사용자</td><td><code>prefers-reduced-motion</code>이면 부드러운 스크롤·등장 효과 끔</td></tr>
+      <tr><td>Vercel이 <code>public</code> 폴더를 찾음</td><td><code>vercel.json</code>에서 출력 폴더를 루트(<code>.</code>)로</td></tr>
+    </table></div>
+  </section>
+
+  <section id="practice">
+    <p class="kicker">12</p>
+    <h2>연습 과제</h2>
+    <p>쉬운 것부터 순서대로예요. 하나씩 바꿔보고 브라우저를 새로고침해서 확인해 보세요.</p>
+    <ol class="steps">
+      <li><code>style.css</code>에서 <code>.ritual { height: 560vh }</code>를 300vh로 바꿔보기 → 리추얼이 빨라지는 이유 설명해 보기</li>
+      <li><code>main.js</code>의 <code>capT</code> 구간 숫자를 바꿔 캡이 더 늦게 열리게 하기 (바꾼 뒤 <code>npm run build</code>)</li>
+      <li>단어 차오르기의 <code>stagger: 0.05</code>를 0.2로 바꿔보기</li>
+      <li><code>scene.js</code>의 댐핑 값 <code>0.0009</code>를 0.1로 바꿔 움직임이 얼마나 느려지는지 보기</li>
+      <li><code>ceramicHeight</code>의 <code>* 0.0016</code>을 0.005로 키워 질감이 거칠어지는 것 보기</li>
+      <li>도전: 새 섹션을 하나 만들고, 그 섹션에서 모래시계가 한 바퀴(<code>TAU</code>) 도는 연출을 <code>updateStage()</code>에 추가해 보기</li>
+    </ol>
+    <p class="mute" style="margin-top:28px">이 노트는 저장소의 <code>docs/study.html</code>에도 있어요.</p>
+  </section>
+</div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+<script>
+(function(){
+  const clamp=(v,a=0,b=1)=>Math.min(b,Math.max(a,v)), range=(v,a,b)=>clamp((v-a)/(b-a));
+  const ease=t=>t<.5?4*t*t*t:1-Math.pow(-2*t+2,3)/2;
+  const css=n=>getComputedStyle(document.documentElement).getPropertyValue(n).trim();
+  const STEPS=['01 캡을 열어주세요','02 오일을 넣어주세요','03 캡을 닫아주세요','04 뒤집어주세요 (향 시작)','05 다시 뒤집으면 멈춰요'];
+  const ritual=f=>({cap:ease(range(f,.03,.11)-range(f,.38,.46)),flip:ease(range(f,.5,.64))+ease(range(f,.8,.92)),mist:range(f,.64,.7)-range(f,.8,.86),step:f<.17?0:f<.37?1:f<.48?2:f<.78?3:4});
+
+  /* 01 plot */
+  const cv=document.getElementById('plot'), fIn=document.getElementById('f');
+  function plot(){
+    const dpr=Math.min(devicePixelRatio||1,2), w=cv.clientWidth, h=cv.clientHeight; cv.width=w*dpr; cv.height=h*dpr;
+    const g=cv.getContext('2d'); g.scale(dpr,dpr); g.clearRect(0,0,w,h);
+    const L=8,R=w-8,T=12,B=h-22, X=f=>L+(R-L)*f, Y=v=>B-(B-T)*v/2;
+    g.strokeStyle=css('--line'); g.lineWidth=1; g.beginPath(); [0,1,2].forEach(v=>{g.moveTo(L,Y(v));g.lineTo(R,Y(v))}); g.stroke();
+    g.fillStyle=css('--mute'); g.font='11px IBM Plex Mono, monospace';
+    [0,.25,.5,.75,1].forEach(f=>g.fillText(f.toFixed(2),clamp(X(f)-12,L,R-28),h-6));
+    const line=(fn,c)=>{g.strokeStyle=c;g.lineWidth=2;g.beginPath();for(let i=0;i<=300;i++){const f=i/300;const y=Y(fn(f));i?g.lineTo(X(f),y):g.moveTo(X(f),y)}g.stroke()};
+    line(f=>ritual(f).cap,css('--brass')); line(f=>ritual(f).flip,css('--accent')); line(f=>ritual(f).mist,css('--mute'));
+    const f=+fIn.value; g.strokeStyle=css('--fg'); g.setLineDash([3,3]); g.beginPath(); g.moveTo(X(f),T); g.lineTo(X(f),B); g.stroke(); g.setLineDash([]);
+    const r=ritual(f);
+    document.getElementById('rf').textContent=f.toFixed(2);
+    document.getElementById('rc').textContent=r.cap.toFixed(2);
+    document.getElementById('rl').textContent=Math.round(r.flip*180);
+    document.getElementById('rm').textContent=r.mist.toFixed(2);
+    document.getElementById('stepName').textContent=STEPS[r.step];
+  }
+  fIn.addEventListener('input',plot); addEventListener('resize',plot); plot();
+  matchMedia('(prefers-color-scheme: dark)').addEventListener('change',plot);
+
+  /* 02/03 sticky + word scrub, 04 horizontal — progress relative to the scroller */
+  const prog=(sc,el)=>{const r=el.getBoundingClientRect(), s=sc.getBoundingClientRect(); return clamp((s.top-r.top)/Math.max(1,r.height-sc.clientHeight))};
+  const words=document.getElementById('words1');
+  words.innerHTML=words.textContent.trim().split(/\s+/).map(w=>'<span>'+w+'</span>').join(' ');
+  const sc1=document.getElementById('sc1'), pin1=document.getElementById('pin1');
+  function u1(){const p=prog(sc1,pin1); document.getElementById('bar1').style.transform='scaleY('+p+')'; document.getElementById('pinRead').textContent='f = '+p.toFixed(2);
+    const ws=words.children, n=ws.length; for(let i=0;i<n;i++) ws[i].style.opacity=clamp(p*n*1.2-i,0.15,1);}
+  sc1.addEventListener('scroll',u1); u1();
+  const sc2=document.getElementById('sc2'), pin2=document.getElementById('pin2'), tr=document.getElementById('track2');
+  function u2(){const p=prog(sc2,pin2), dist=Math.max(0,tr.scrollWidth-sc2.clientWidth+20); tr.style.transform='translate3d('+(-p*dist)+'px,0,0)';}
+  sc2.addEventListener('scroll',u2); addEventListener('resize',u2); u2();
+
+  /* 10 three.js lab */
+  const canvas=document.getElementById('three'), msg=document.getElementById('three-msg');
+  if(!window.THREE){msg.textContent='three.js를 불러오지 못했어요. 네트워크를 확인해 주세요.';return;}
+  const renderer=new THREE.WebGLRenderer({canvas,antialias:true,alpha:true});
+  renderer.setPixelRatio(Math.min(devicePixelRatio||1,2)); renderer.outputEncoding=THREE.sRGBEncoding;
+  const scene=new THREE.Scene(), camera=new THREE.PerspectiveCamera(30,1,.1,50); camera.position.set(0,.4,7.8); camera.lookAt(0,0,0);
+  scene.add(new THREE.HemisphereLight(0xffffff,0x9c9282,.7));
+  const key=new THREE.DirectionalLight(0xfff4e4,1.1); key.position.set(-4,5,4); scene.add(key);
+  const rim=new THREE.DirectionalLight(0xffffff,.6); rim.position.set(3,2,-5); scene.add(rim);
+  const V=pts=>pts.map(([x,y])=>new THREE.Vector2(x,y));
+  const ceramic=new THREE.MeshStandardMaterial({color:'#A5AE98',roughness:.9});
+  const brass=new THREE.MeshStandardMaterial({color:'#c9ad80',metalness:.85,roughness:.35});
+  const glass=new THREE.MeshStandardMaterial({color:'#ffffff',roughness:.2,transparent:true,opacity:.28,depthWrite:false,side:THREE.DoubleSide});
+  const flip=new THREE.Group(), spin=new THREE.Group(); flip.add(spin); scene.add(flip);
+  const cup=[[0,-.95],[.62,-.95]]; for(let i=0;i<=20;i++){const t=i/20,y=-.95+t*.61,k=Math.max(0,(t-.4)/.6);cup.push([.62-.12*Math.pow(k,2),y])} cup.push([0,-.34]);
+  const lower=new THREE.Group(), upper=new THREE.Group(), mid=new THREE.Group(), capG=new THREE.Group();
+  lower.add(new THREE.Mesh(new THREE.LatheGeometry(V(cup),64),ceramic));
+  const up=new THREE.Mesh(new THREE.LatheGeometry(V(cup),64),ceramic); up.rotation.x=Math.PI; upper.add(up);
+  const ring=(y,r)=>{const m=new THREE.Mesh(new THREE.CylinderGeometry(r,r,.045,64),brass);m.position.y=y;return m};
+  lower.add(ring(-.97,.64),ring(-.32,.5)); upper.add(ring(.32,.5));
+  const gp=[];for(let i=0;i<=30;i++){const y=-.3+.6*i/30;gp.push([.05+.42*Math.pow(Math.abs(y)/.3,1.4),y])}
+  mid.add(new THREE.Mesh(new THREE.LatheGeometry(V(gp),64),glass));
+  capG.add(ring(0,.64)); const disc=new THREE.Mesh(new THREE.CylinderGeometry(.58,.58,.04,64),ceramic); disc.position.y=.01; capG.add(disc); capG.position.y=.98;
+  const port=new THREE.Mesh(new THREE.CircleGeometry(.09,32),new THREE.MeshStandardMaterial({color:'#2b2924'})); port.rotation.x=-Math.PI/2; port.position.y=.952; upper.add(port);
+  spin.add(lower,upper,mid,capG);
+  // drops
+  const dropGeo=new THREE.SphereGeometry(1,24,16), dropMat=new THREE.MeshStandardMaterial({color:'#e2c066',metalness:.1,roughness:.05,transparent:true,opacity:.85});
+  const drops=[0,1,2].map(()=>{const d=new THREE.Mesh(dropGeo,dropMat);d.visible=false;spin.add(d);return d});
+  let dropT=-1;
+  const state={flip:0,cap:0,ex:0,spin:.4}, target={flip:0,cap:0,ex:0};
+  let damp=true, drag=null;
+  function size(){const w=canvas.clientWidth,h=canvas.clientHeight;renderer.setSize(w,h,false);camera.aspect=w/h;camera.updateProjectionMatrix()}
+  addEventListener('resize',size); size();
+  const f3=document.getElementById('f3'), ex3=document.getElementById('ex3');
+  function inputs(){const r=ritual(+f3.value); target.flip=r.flip*Math.PI; target.cap=r.cap; target.ex=+ex3.value; document.getElementById('step3').textContent=STEPS[r.step]}
+  f3.addEventListener('input',inputs); ex3.addEventListener('input',inputs); inputs();
+  document.getElementById('damp').onclick=function(){damp=!damp;this.textContent=damp?'댐핑 끄기':'댐핑 켜기';this.setAttribute('aria-pressed',String(!damp))};
+  document.getElementById('drops').onclick=()=>{f3.value=.25;inputs();dropT=0};
+  document.querySelectorAll('[data-col]').forEach(b=>b.onclick=()=>{target.col=new THREE.Color(b.dataset.col)});
+  canvas.addEventListener('pointerdown',e=>{drag=e.clientX;canvas.setPointerCapture(e.pointerId)});
+  canvas.addEventListener('pointermove',e=>{if(drag!==null){state.spin+=(e.clientX-drag)*.01;drag=e.clientX}});
+  canvas.addEventListener('pointerup',()=>drag=null);
+  const clock=new THREE.Clock(); const reduced=matchMedia('(prefers-reduced-motion: reduce)').matches;
+  (function frame(){
+    const dt=Math.min(clock.getDelta(),.05), k=damp?1-Math.pow(.0009,dt):1;
+    for(const n of ['flip','cap','ex']) state[n]+=(target[n]-state[n])*k;
+    if(target.col) ceramic.color.lerp(target.col,damp?k:1);
+    if(drag===null&&!reduced) state.spin+=dt*.25;
+    flip.rotation.z=state.flip; spin.rotation.y=state.spin;
+    const e=state.ex; upper.position.y=e*.9; lower.position.y=-e*.5;
+    const c=state.cap, lift=Math.min(1,c*2), side=Math.max(0,c*2-1);
+    capG.position.set(side*1,.98+lift*.22-side*.12+e*1.35,side*.15);
+    if(dropT>=0){dropT+=dt; const R=.05;
+      drops.forEach((d,i)=>{const t=dropT-i*1.3; if(t<0||t>1.4){d.visible=false;return} d.visible=true;
+        if(t<.75){const g=.35+.65*(t/.75);d.position.set(0,1.45-R*g,0);d.scale.set(R*g,R*g*1.2,R*g)}
+        else if(t<1.17){const f=(t-.75)/.42,st=1+.45*f;d.position.set(0,1.4-(1.4-.97)*f*f,0);d.scale.set(R/Math.sqrt(st),R*st,R/Math.sqrt(st))}
+        else{const q=(t-1.17)/.23;d.position.set(0,.96,0);d.scale.set(R*(1+q),R*(1-q)*.5+.001,R*(1+q))}});
+      msg.textContent='방울 '+Math.min(3,Math.floor(dropT/1.3)+1)+' / 3'; if(dropT>4.1){dropT=-1;msg.textContent='3방울 완료 · 진행도를 0.55 이상으로 올려 뒤집어 보세요'}}
+    renderer.render(scene,camera); requestAnimationFrame(frame);
+  })();
+})();
+</script>
