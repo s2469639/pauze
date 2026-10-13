@@ -242,9 +242,15 @@ main, .footer { position: relative; }
 .badge { position: absolute; top: 18px; left: 18px; z-index: 2; font: italic 400 15px var(--en); background: var(--ink); color: var(--ivory); padding: 4px 14px; border-radius: 99px; }
 .shop-visual { height: 380px; display: flex; align-items: center; justify-content: center; position: relative; padding-top: 24px; }
 .shop-visual img { height: 92%; width: auto; mix-blend-mode: multiply; }
-.shop-visual .oil-svg { height: 62%; }
-.shop-visual.starter .oil-svg { position: absolute; height: 34%; right: 18%; bottom: 8%; }
-.shop-visual.starter img { transform: translateX(-12%); }
+.shop-visual { text-decoration: none; }
+.shop-visual .oil-img { height: 70%; }
+.shop-visual.starter .oil-img { position: absolute; height: 36%; right: 16%; bottom: 6%; }
+.shop-visual.starter [data-shop-img] { transform: translateX(-12%); }
+.shop-visual .view { position: absolute; left: 50%; bottom: 18px; transform: translate(-50%, 10px); opacity: 0; font: italic 400 15px var(--en); letter-spacing: .08em; border-bottom: 1px solid var(--brass); transition: opacity .5s var(--ease), transform .6s var(--ease); }
+.shop-card:hover .view, .shop-visual:focus-visible .view { opacity: 1; transform: translate(-50%, 0); }
+.shop-info h3 a { text-decoration: none; }
+.scent-pick { display: flex; align-items: center; gap: 12px; margin: -6px 0 20px; font-size: 13px; color: var(--mute); }
+.scent-pick select { flex: 1; height: 38px; border: 1px solid var(--line); border-radius: 99px; padding: 0 14px; background: #fff; font: 400 14px var(--en); letter-spacing: .04em; color: var(--ink); }
 .shop-info { padding: 26px 28px 30px; display: flex; flex-direction: column; flex: 1; }
 .shop-en { font: italic 400 16px var(--en); color: var(--brass-d); margin: 0 0 2px; }
 .shop-info h3 { font-size: 24px; font-weight: 300; }
@@ -306,9 +312,9 @@ main, .footer { position: relative; }
 .drawer-body { flex: 1; overflow-y: auto; padding: 8px 28px; overscroll-behavior: contain; }
 .empty { text-align: center; padding: 80px 0; color: var(--mute); }
 .line-item { display: grid; grid-template-columns: 76px 1fr auto; gap: 16px; padding: 20px 0; border-bottom: 1px solid var(--line); align-items: start; }
-.li-img { width: 76px; height: 96px; border-radius: 10px; background: var(--paper); display: grid; place-items: center; overflow: hidden; }
-.li-img img { height: 90%; width: auto; mix-blend-mode: multiply; }
-.li-img svg { height: 80%; }
+.li-img { position: relative; display: block; width: 76px; height: 96px; border-radius: 10px; background: var(--paper); overflow: hidden; }
+.li-img img { position: absolute; inset: 6%; width: 88%; height: 88%; object-fit: contain; }
+.li-img { text-decoration: none; }
 .li-info b { display: block; font: 400 16px var(--serif); }
 .li-info span { font-size: 13px; color: var(--mute); }
 .li-price { text-align: right; display: grid; gap: 2px; justify-items: end; }

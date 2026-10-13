@@ -6,17 +6,16 @@
   var form = $('#orderForm');
   var main = $('.co-main');
 
-  function bottleSvg() { return '<svg viewBox="0 0 120 200" aria-hidden="true"><rect x="44" y="18" width="32" height="34" rx="3" fill="#cdb48a"/><rect x="40" y="50" width="40" height="8" rx="2" fill="#b59a6e"/><path d="M30 70q0-12 12-12h36q12 0 12 12v100q0 12-12 12H42q-12 0-12-12z" fill="#e6d9bf"/><text x="60" y="110" text-anchor="middle" font-family="Cormorant Garamond,serif" font-size="11" letter-spacing="3" fill="#5f5848">PAUZE</text></svg>'; }
 
   /* ---------- render ---------- */
   function render() {
     var items = cart.items();
     if (!items.length && main.dataset.view !== 'done') { show('empty'); return; }
     $('[data-items]').innerHTML = items.map(function (it, i) {
-      var p = P.product(it.id), c = it.color ? P.color(it.color) : null;
+      var p = P.product(it.id);
       return '<div class="co-item">' +
-        '<div class="li-img">' + (c ? '<img src="' + c.img + '" alt="">' : bottleSvg()) + '</div>' +
-        '<div class="co-item-info"><b>' + p.name + '</b><span>' + (c ? c.name : '10ml') + ' · ' + p.desc + '</span>' +
+        '<a class="li-img" href="product.html?id=' + p.id + '"><img src="' + P.itemImg(it) + '" alt=""></a>' +
+        '<div class="co-item-info"><b>' + p.name + '</b><span>' + P.itemLabel(it) + '</span>' +
         '<div class="qty sm"><button type="button" data-i="' + i + '" data-d="-1" aria-label="줄이기">−</button><span>' + it.qty + '</span><button type="button" data-i="' + i + '" data-d="1" aria-label="늘리기">+</button></div></div>' +
         '<div class="li-price">' + (p.sale < p.price ? '<s>' + won(p.price * it.qty) + '</s>' : '') + '<b>' + won(p.sale * it.qty) + '</b>' +
         '<button type="button" class="rm" data-rm="' + i + '">삭제</button></div></div>';
@@ -179,7 +178,7 @@
     var no = 'PZ' + d.getFullYear() + String(d.getMonth() + 1).padStart(2, '0') + String(d.getDate()).padStart(2, '0') + '-' + Math.random().toString(36).slice(2, 7).toUpperCase();
     var rows = [
       ['주문 번호', no],
-      ['주문 상품', items.map(function (it) { var p = P.product(it.id), c = it.color ? P.color(it.color) : null; return p.name + (c ? ' (' + c.name + ')' : '') + ' × ' + it.qty; }).join('<br>')],
+      ['주문 상품', items.map(function (it) { var p = P.product(it.id), l = P.itemLabel(it); return p.name + (l ? ' (' + l + ')' : '') + ' × ' + it.qty; }).join('<br>')],
       ['받는 분', form.receiver.value + ' · ' + form.rphone.value],
       ['배송지', '(' + form.zip.value + ') ' + form.addr1.value + ' ' + form.addr2.value],
       ['결제 수단', $('[data-pg-method]').textContent],

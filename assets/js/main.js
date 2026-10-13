@@ -1,7 +1,7 @@
 /* PAUZE — page choreography */
 import { createScene } from './scene.js';
 
-const { COLORS, PRODUCTS, won, off, product, color, cart } = window.PAUZE;
+const { COLORS, SCENTS, PRODUCTS, won, off, product, color, scent, cart } = window.PAUZE;
 const $ = (s, r = document) => r.querySelector(s);
 const $$ = (s, r = document) => [...r.querySelectorAll(s)];
 const clamp = (v, a = 0, b = 1) => Math.min(b, Math.max(a, v));
@@ -184,33 +184,36 @@ function updateNav(y) {
 }
 
 /* ---------- shop ---------- */
-const OIL_SVG = `<svg class="oil-svg" viewBox="0 0 120 200" aria-hidden="true"><defs><linearGradient id="og" x1="0" x2="1"><stop offset="0" stop-color="#d9c9a8"/><stop offset=".5" stop-color="#efe4cc"/><stop offset="1" stop-color="#c9b48c"/></linearGradient><linearGradient id="bg2" x1="0" x2="1"><stop offset="0" stop-color="#c2a983"/><stop offset=".45" stop-color="#e3d0aa"/><stop offset="1" stop-color="#a88d63"/></linearGradient></defs><rect x="44" y="18" width="32" height="34" rx="3" fill="url(#bg2)"/><rect x="40" y="50" width="40" height="8" rx="2" fill="#b59a6e"/><path d="M30 70q0-12 12-12h36q12 0 12 12v100q0 12-12 12H42q-12 0-12-12z" fill="url(#og)" opacity=".85"/><path d="M30 120h60v50q0 12-12 12H42q-12 0-12-12z" fill="#b89c6c" opacity=".35"/><text x="60" y="106" text-anchor="middle" font-family="Cormorant Garamond,serif" font-size="11" letter-spacing="3" fill="#5f5848">PAUZE</text><text x="60" y="119" text-anchor="middle" font-family="Noto Sans KR,sans-serif" font-size="5" letter-spacing="1.5" fill="#7b7262">SIGNATURE OIL 10ml</text></svg>`;
-
 function renderShop() {
   const grid = $('[data-shop]');
-  grid.innerHTML = PRODUCTS.map((p) => `
-    <article class="shop-card${p.badge ? ' featured' : ''}" data-id="${p.id}" data-color="sage">
+  grid.innerHTML = PRODUCTS.map((p) => {
+    const visual = p.id === 'oil'
+      ? `<img src="${SCENTS[0].img}" alt="${p.name} ${SCENTS[0].name}" class="oil-img" data-shop-oil>`
+      : `<img src="${COLORS[0].img}" alt="${p.name} ${COLORS[0].name}" data-shop-img>${p.id === 'starter' ? `<img src="${SCENTS[0].img}" alt="" class="oil-img" data-shop-oil>` : ''}`;
+    return `
+    <article class="shop-card${p.badge ? ' featured' : ''}" data-id="${p.id}" data-color="${COLORS[0].key}" data-scent="${SCENTS[0].key}">
       ${p.badge ? `<span class="badge">${p.badge}</span>` : ''}
-      <div class="shop-visual ${p.id}">
-        ${p.id === 'oil' ? OIL_SVG : `<img src="${COLORS[0].img}" alt="${p.name} ${COLORS[0].name}" data-shop-img>${p.id === 'starter' ? OIL_SVG : ''}`}
-      </div>
+      <a class="shop-visual ${p.id}" href="product.html?id=${p.id}" aria-label="${p.name} 상세 보기">${visual}<span class="view">자세히 보기</span></a>
       <div class="shop-info">
         <p class="shop-en">${p.en}</p>
-        <h3>${p.name}</h3>
+        <h3><a href="product.html?id=${p.id}">${p.name}</a></h3>
         <p class="shop-desc">${p.desc}</p>
         <div class="price">
           ${p.sale < p.price ? `<span class="off">${off(p)}%</span><s>${won(p.price)}</s>` : ''}
           <b>${won(p.sale)}</b>
         </div>
-        ${p.hasColor ? `<div class="dots" role="radiogroup" aria-label="컬러">${COLORS.map((c, i) => `<button type="button" role="radio" aria-checked="${i === 0}" aria-label="${c.name}" data-color="${c.key}" class="${i === 0 ? 'on' : ''}" style="--c:${c.hex}"></button>`).join('')}<span class="dot-name">${COLORS[0].name}</span></div>` : '<div class="dots"><span class="dot-name">Signature Scent · 10ml</span></div>'}
+        ${p.hasColor ? `<div class="dots" role="radiogroup" aria-label="컬러">${COLORS.map((c, i) => `<button type="button" role="radio" aria-checked="${i === 0}" aria-label="${c.name}" data-color="${c.key}" class="${i === 0 ? 'on' : ''}" style="--c:${c.hex}"></button>`).join('')}<span class="dot-name">${COLORS[0].name}</span></div>` : ''}
+        ${p.hasScent ? `<label class="scent-pick"><span>향</span><select data-scent-select>${SCENTS.map((sc) => `<option value="${sc.key}">${sc.name}</option>`).join('')}</select></label>` : ''}
         <div class="buy-row">
           <div class="qty"><button type="button" data-q="-1" aria-label="수량 줄이기">−</button><span data-qty>1</span><button type="button" data-q="1" aria-label="수량 늘리기">+</button></div>
           <button type="button" class="btn btn-sm" data-add>장바구니</button>
           <button type="button" class="btn btn-sm btn-dark" data-buy>바로 구매</button>
         </div>
       </div>
-    </article>`).join('');
+    </article>`;
+  }).join('');
 
+  const swap = (img, src, alt) => gsap.to(img, { opacity: 0, duration: 0.2, onComplete: () => { img.src = src; img.alt = alt; gsap.to(img, { opacity: 1, duration: 0.4 }); } });
   $$('.shop-card', grid).forEach((card) => {
     const p = product(card.dataset.id);
     let qty = 1;
@@ -220,60 +223,28 @@ function renderShop() {
       $$('.dots button', card).forEach((x) => { x.classList.toggle('on', x === d); x.setAttribute('aria-checked', x === d); });
       $('.dot-name', card).textContent = c.name;
       const img = $('[data-shop-img]', card);
-      if (img) gsap.to(img, { opacity: 0, duration: 0.2, onComplete: () => { img.src = c.img; img.alt = `${p.name} ${c.name}`; gsap.to(img, { opacity: 1, duration: 0.4 }); } });
+      if (img) swap(img, c.img, `${p.name} ${c.name}`);
     }));
+    const sel = $('[data-scent-select]', card);
+    if (sel) sel.addEventListener('change', () => {
+      card.dataset.scent = sel.value;
+      const img = $('[data-shop-oil]', card);
+      if (img) swap(img, scent(sel.value).img, scent(sel.value).name);
+    });
     $$('[data-q]', card).forEach((b) => b.addEventListener('click', () => { qty = clamp(qty + +b.dataset.q, 1, 9); $('[data-qty]', card).textContent = qty; }));
     $('[data-add]', card).addEventListener('click', () => {
-      cart.add(p.id, card.dataset.color, qty);
-      toast(`${p.name}${p.hasColor ? ` · ${color(card.dataset.color).name}` : ''} — 장바구니에 담았어요`);
-      openCart();
+      cart.add(p.id, card.dataset.color, qty, card.dataset.scent);
+      const it = { color: p.hasColor ? card.dataset.color : null, scent: p.hasScent ? card.dataset.scent : null };
+      ui.toast(`${p.name} · ${window.PAUZE.itemLabel(it)} — 장바구니에 담았어요`);
+      ui.open();
     });
-    $('[data-buy]', card).addEventListener('click', () => { cart.add(p.id, card.dataset.color, qty); location.href = 'checkout.html'; });
+    $('[data-buy]', card).addEventListener('click', () => { cart.add(p.id, card.dataset.color, qty, card.dataset.scent); location.href = 'checkout.html'; });
   });
 }
 
-/* ---------- cart drawer ---------- */
-function renderCart(items = cart.items()) {
-  $$('[data-cart-count]').forEach((el) => { el.textContent = cart.count(); });
-  const box = $('[data-cart-items]');
-  if (!items.length) {
-    box.innerHTML = '<div class="empty"><p>장바구니가 비어 있어요.</p><a href="#shop" class="link" data-close-cart>PAUZE 둘러보기</a></div>';
-  } else {
-    box.innerHTML = items.map((it, i) => {
-      const p = product(it.id), c = it.color ? color(it.color) : null;
-      return `<div class="line-item">
-        <div class="li-img">${c ? `<img src="${c.img}" alt="">` : OIL_SVG}</div>
-        <div class="li-info"><b>${p.name}</b><span>${c ? c.name : '10ml'}</span>
-          <div class="qty sm"><button type="button" data-ci="${i}" data-d="-1" aria-label="줄이기">−</button><span>${it.qty}</span><button type="button" data-ci="${i}" data-d="1" aria-label="늘리기">+</button></div></div>
-        <div class="li-price">${p.sale < p.price ? `<s>${won(p.price * it.qty)}</s>` : ''}<b>${won(p.sale * it.qty)}</b><button type="button" class="rm" data-rm="${i}">삭제</button></div>
-      </div>`;
-    }).join('');
-  }
-  const t = cart.totals(items);
-  $('[data-cart-subtotal]').textContent = won(t.subtotal);
-  $('[data-cart-shipping]').textContent = t.shipping ? won(t.shipping) : '무료';
-  $('[data-cart-total]').textContent = won(t.total);
-  const left = window.PAUZE.SHIPPING.freeOver - t.subtotal;
-  $('[data-free-hint]').textContent = t.subtotal && left > 0 ? `${won(left)} 더 담으면 무료배송` : t.subtotal ? '무료배송 적용' : '';
-  $('[data-checkout]').classList.toggle('disabled', !items.length);
-  $$('[data-ci]', box).forEach((b) => b.addEventListener('click', () => { const i = +b.dataset.ci; cart.setQty(i, cart.items()[i].qty + +b.dataset.d); }));
-  $$('[data-rm]', box).forEach((b) => b.addEventListener('click', () => cart.remove(+b.dataset.rm)));
-  $$('[data-close-cart]', box).forEach((b) => b.addEventListener('click', closeCart));
-}
-function openCart() { document.body.classList.add('cart-open'); $('.drawer').setAttribute('aria-hidden', 'false'); lenis?.stop(); }
-function closeCart() { document.body.classList.remove('cart-open'); $('.drawer').setAttribute('aria-hidden', 'true'); lenis?.start(); }
-$$('[data-open-cart]').forEach((b) => b.addEventListener('click', openCart));
-$$('[data-close-cart]').forEach((b) => b.addEventListener('click', closeCart));
-addEventListener('keydown', (e) => { if (e.key === 'Escape') closeCart(); });
-$('[data-checkout]').addEventListener('click', (e) => { if (!cart.count()) e.preventDefault(); });
-cart.on(renderCart);
-
-let toastTimer;
-function toast(msg) {
-  const el = $('.toast');
-  el.textContent = msg; el.classList.add('show');
-  clearTimeout(toastTimer); toastTimer = setTimeout(() => el.classList.remove('show'), 2400);
-}
+/* ---------- cart drawer (shared) ---------- */
+const ui = window.PAUZE.ui;
+ui.mount({ onOpen: () => lenis?.stop(), onClose: () => lenis?.start() });
 
 /* ---------- cursor + magnetic ---------- */
 if (matchMedia('(pointer:fine)').matches && !reduced) {
@@ -301,7 +272,6 @@ function tick() {
 /* ---------- boot ---------- */
 async function boot() {
   renderShop();
-  renderCart();
   sizeCraft();
   addEventListener('resize', () => { sizeCraft(); ScrollTrigger.refresh(); });
 
