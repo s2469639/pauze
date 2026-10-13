@@ -230,7 +230,7 @@ function renderShop() {
       toast(`${p.name}${p.hasColor ? ` · ${color(card.dataset.color).name}` : ''} — 장바구니에 담았어요`);
       openCart();
     });
-    $('[data-buy]', card).addEventListener('click', () => { cart.add(p.id, card.dataset.color, qty); location.href = '/checkout.html'; });
+    $('[data-buy]', card).addEventListener('click', () => { cart.add(p.id, card.dataset.color, qty); location.href = 'checkout.html'; });
   });
 }
 
