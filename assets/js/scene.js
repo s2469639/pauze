@@ -333,9 +333,9 @@ export function createScene(canvas, opts = {}) {
     ceramics.push(topMat);
     const top = new THREE.Mesh(new THREE.CircleGeometry(0.404, 96), topMat);
     top.rotation.x = -Math.PI / 2; top.position.y = CUT - 0.004;
-    const hole = new THREE.Mesh(new THREE.CircleGeometry(0.05, 48), new THREE.MeshStandardMaterial({ color: '#2b2924', roughness: 0.6 }));
+    const hole = new THREE.Mesh(new THREE.CircleGeometry(0.09, 48), new THREE.MeshStandardMaterial({ color: '#2b2924', roughness: 0.6 }));
     hole.rotation.x = -Math.PI / 2; hole.position.y = CUT - 0.002;
-    const grommet = new THREE.Mesh(new THREE.TorusGeometry(0.056, 0.01, 16, 64), new THREE.MeshStandardMaterial({ color: '#c9cbcc', metalness: 1, roughness: 0.3 }));
+    const grommet = new THREE.Mesh(new THREE.TorusGeometry(0.1, 0.016, 16, 64), new THREE.MeshStandardMaterial({ color: '#c9cbcc', metalness: 1, roughness: 0.3 }));
     grommet.rotation.x = Math.PI / 2; grommet.position.y = CUT - 0.001;
     upperG.add(top, hole, grommet);
 
@@ -358,10 +358,10 @@ export function createScene(canvas, opts = {}) {
     const dropShine = new THREE.MeshPhysicalMaterial({ color: '#000000', roughness: 0.0, envMapIntensity: 1.4, specularIntensity: 1, transparent: true, depthWrite: false,
       blending: THREE.CustomBlending, blendEquation: THREE.AddEquation, blendSrc: THREE.OneFactor, blendDst: THREE.OneFactor, blendSrcAlpha: THREE.ZeroFactor, blendDstAlpha: THREE.OneFactor });
     const makeDrop = () => { const g = new THREE.Group(); const b = new THREE.Mesh(dropGeo, dropBodyMat); const sh = new THREE.Mesh(dropGeo, dropShine); b.renderOrder = 6; sh.renderOrder = 7; g.add(b, sh); g.visible = false; oilG.add(g); return g; };
-    const drops = [makeDrop(), makeDrop()];
+    const drops = [makeDrop(), makeDrop(), makeDrop()];
     const rippleMat = new THREE.MeshBasicMaterial({ color: '#f3e3b6', transparent: true, opacity: 0, depthWrite: false });
     const ripple = new THREE.Mesh(new THREE.RingGeometry(0.02, 0.028, 48), rippleMat); ripple.rotation.x = -Math.PI / 2; ripple.position.y = CUT + 0.003; oilG.add(ripple);
-    const pool = new THREE.Mesh(new THREE.CircleGeometry(0.048, 40), new THREE.MeshPhysicalMaterial({ color: '#c9a14a', roughness: 0.05, clearcoat: 1, transparent: true, opacity: 0 }));
+    const pool = new THREE.Mesh(new THREE.CircleGeometry(0.086, 40), new THREE.MeshPhysicalMaterial({ color: '#c9a14a', roughness: 0.05, clearcoat: 1, transparent: true, opacity: 0 }));
     pool.rotation.x = -Math.PI / 2; pool.position.y = CUT + 0.0025; oilG.add(pool);
     const TIP = CUT + 0.24;       // pipette tip height when lowered
     const R = 0.058;              // drop radius
@@ -371,14 +371,14 @@ export function createScene(canvas, opts = {}) {
       oilG.visible = oilAmt > 0.01;
       if (!oilG.visible) { oilT = 0; pool.material.opacity = 0; return; }
       if (on) oilT += dt;
-      const CYCLE = 4.2;
+      const CYCLE = 5.6;
       const t = oilT % CYCLE;
       // pipette slides in from above, hangs, slides out after the second drop
-      const inOut = Math.min(1, t / 0.6) * (1 - Math.max(0, Math.min(1, (t - 3.5) / 0.6)));
+      const inOut = Math.min(1, t / 0.6) * (1 - Math.max(0, Math.min(1, (t - 4.9) / 0.6)));
       const e = inOut * inOut * (3 - 2 * inOut);
       pip.position.y = TIP + (1 - e) * 0.9;
       pip.scale.setScalar(1);
-      [[0.7, 1.55], [2.0, 2.85]].forEach(([t0, t1], i) => {
+      [[0.7, 1.55], [2.0, 2.85], [3.3, 4.15]].forEach(([t0, t1], i) => {
         const d = drops[i];
         if (t < t0 || t > t1 + 0.2) { d.visible = false; return; }
         d.visible = true;
@@ -410,7 +410,7 @@ export function createScene(canvas, opts = {}) {
           rippleMat.opacity = (1 - r) * 0.7;
         }
       });
-      const poolT = t < 1.55 ? 0 : t < 2.85 ? 0.6 : 1;
+      const poolT = t < 1.55 ? 0 : t < 2.85 ? 0.45 : t < 4.15 ? 0.75 : 1;
       pool.material.opacity += ((t < 0.3 ? 0 : poolT * 0.85) - pool.material.opacity) * Math.min(1, dt * 6);
       pool.scale.setScalar(0.6 + 0.4 * poolT);
       if (t < 0.7) rippleMat.opacity = 0;

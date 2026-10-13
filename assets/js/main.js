@@ -130,7 +130,7 @@ function updateStage() {
     const p = progressOf($('#inside'));
     const e = range(p, 0.08, 0.6);
     Object.assign(t, { x: m ? 0 : -0.42, y: m ? 0.75 : 0.05 - e * 0.1, scale: (m ? 0.42 : 0.82) - e * (m ? 0.08 : 0.16), flip: TAU, cap: 0, mist: 0, explode: e, spinSpeed: 0.12 });
-    const n = Math.round(range(p, 0.05, 0.7) * 8);
+    const n = Math.round(range(p, 0.05, 0.7) * 9);
     $$('.inside-parts li').forEach((li, i) => li.classList.toggle('on', i < n));
   } else if (activeZone === 'colors') {
     const c = progressOf($('#colors'));
