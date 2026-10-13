@@ -31,7 +31,7 @@
       photo('assets/img/life-hands.webp', '오일과 함께 쓰는 센트글라스')
     ]);
     if (p.id === 'starter') return [
-      photo('assets/img/box-open.webp', '스타터 세트 개봉 모습'), photo('assets/img/gift-ribbon.webp', '리본으로 포장한 기프트 박스'),
+      photo('assets/img/poster.webp', 'PAUZE 센트글라스 스타터 세트'), photo('assets/img/box-open.webp', '스타터 세트 개봉 모습'), photo('assets/img/gift-ribbon.webp', '리본으로 포장한 기프트 박스'),
       cut(c.img, c.name, c.bg), cut(s.img, s.name, '#F1ECE2'), photo('assets/img/starter-set.webp', '스타터 세트 구성')
     ];
     return [

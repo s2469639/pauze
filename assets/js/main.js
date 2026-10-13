@@ -169,6 +169,7 @@ function setupReveals() {
   $$('.shop-card').forEach((el, i) => gsap.from(el, { y: 80, opacity: 0, duration: 1.3, delay: i * 0.12, ease: 'expo.out', scrollTrigger: { trigger: '.shop-grid', start: 'top 85%' } }));
   gsap.fromTo('.closing-img img', { scale: 1.3 }, { scale: 1, ease: 'none', scrollTrigger: { trigger: '.closing-img', start: 'top bottom', end: 'bottom top', scrub: true } });
   gsap.fromTo('.footer-mark', { yPercent: 40 }, { yPercent: 0, ease: 'none', scrollTrigger: { trigger: '.footer', start: 'top bottom', end: 'bottom bottom', scrub: true } });
+  gsap.fromTo('.film-frame', { scale: 0.9, borderRadius: '48px' }, { scale: 1, borderRadius: '26px', ease: 'none', scrollTrigger: { trigger: '.film', start: 'top bottom', end: 'top 25%', scrub: true } });
   // hero exit
   gsap.to('.hero-word span', { yPercent: -40, opacity: 0.2, stagger: 0.03, ease: 'none', scrollTrigger: { trigger: '.hero', start: 'top top', end: 'bottom top', scrub: true } });
   gsap.to(['.hero-left', '.hero-right', '.scroll-cue'], { y: -80, opacity: 0, ease: 'none', scrollTrigger: { trigger: '.hero', start: '10% top', end: '60% top', scrub: true } });
