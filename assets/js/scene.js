@@ -179,19 +179,41 @@ export function createScene(canvas, opts = {}) {
     // recolor only the sage ceramic texels; brass and glass keep their baked colour
     mat.onBeforeCompile = (sh) => {
       sh.uniforms.uTint = tintUniform;
-      sh.fragmentShader = 'uniform vec3 uTint;\n' + sh.fragmentShader.replace('#include <map_fragment>', `#include <map_fragment>
+      sh.vertexShader = sh.vertexShader
+        .replace('#include <common>', '#include <common>\nvarying vec3 vObj;')
+        .replace('#include <begin_vertex>', '#include <begin_vertex>\nvObj = position;');
+      sh.fragmentShader = 'uniform vec3 uTint;\nvarying vec3 vObj;\n' + SURFACE_GLSL + sh.fragmentShader
+        .replace('void main() {', BUMP_GLSL + '\nvoid main() {')
+        .replace('#include <map_fragment>', `#include <map_fragment>
+        float pzSage = 0.0, pzBrass = 0.0;
         {
           vec3 lin = diffuseColor.rgb;
           vec3 sc = pow(max(lin, vec3(0.0)), vec3(1.0 / 2.2));
           float warm = sc.r - sc.b;
           float lum = dot(sc, vec3(0.299, 0.587, 0.114));
-          float sage = (1.0 - smoothstep(0.09, 0.16, warm)) * (1.0 - smoothstep(0.62, 0.70, lum)) * smoothstep(0.015, 0.05, sc.g - sc.b);
+          pzSage = (1.0 - smoothstep(0.09, 0.16, warm)) * (1.0 - smoothstep(0.62, 0.70, lum)) * smoothstep(0.015, 0.05, sc.g - sc.b);
+          pzBrass = smoothstep(0.1, 0.17, warm);
           vec3 refLin = vec3(0.376, 0.423, 0.314);   // #A5AE98 → reproduces the baked texture
           vec3 recol = uTint * clamp(lin / refLin, 0.0, 2.0);
-          diffuseColor.rgb = mix(lin, recol, sage);
+          // speckles: tiny darker flecks in the glaze
+          float fleck = smoothstep(0.86, 0.95, vnoise(vObj * 210.0)) * 0.22;
+          recol *= 1.0 - fleck;
+          diffuseColor.rgb = mix(lin, recol, pzSage);
+        }`)
+        .replace('#include <metalnessmap_fragment>', `#include <metalnessmap_fragment>
+        metalnessFactor = mix(metalnessFactor, 0.0, pzSage);
+        roughnessFactor = mix(roughnessFactor, 0.86 + 0.08 * vnoise(vObj * 40.0), pzSage);
+        metalnessFactor = mix(metalnessFactor, 1.0, pzBrass);
+        roughnessFactor = mix(roughnessFactor, 0.3, pzBrass);`)
+        .replace('#include <normal_fragment_maps>', `#include <normal_fragment_maps>
+        {
+          // stucco relief: fine grain + soft mottling + sparse pinholes (ceramic); fine horizontal brushing (brass)
+          float hS = ceramicHeight(vObj) * pzSage;
+          float hB = brushedHeight(vObj) * pzBrass;
+          normal = bumpPerturb(normal, hS * 0.0016 + hB * 0.00012, faceDirection);
         }`);
     };
-    mat.customProgramCacheKey = () => 'pauze-tint';
+    mat.customProgramCacheKey = () => 'pauze-surface-v2';
 
     // drop the baked cap (rebuilt below so it can open) and the opaque waist (replaced by real glass)
     const CUT = 0.885, GLASS = 0.286;
@@ -222,28 +244,47 @@ export function createScene(canvas, opts = {}) {
     for (let i = prof.length - 1; i >= 0; i--) gpts.push(new THREE.Vector2(prof[i][1], -prof[i][0]));
     for (let i = 1; i < prof.length; i++) gpts.push(new THREE.Vector2(prof[i][1], prof[i][0]));
     const glassGeo = new THREE.LatheGeometry(gpts, 128);
+    // glass = 4 passes: inner wall (back faces), milky frost haze, thickness-tinted body, additive reflections
+    const fresnelVS = 'varying vec3 vN; varying vec3 vV; varying vec3 vP; void main(){ vec4 mv = modelViewMatrix*vec4(position,1.); vN = normalize(normalMatrix*normal); vV = normalize(-mv.xyz); vP = position; gl_Position = projectionMatrix*mv; }';
+    const glassBack = new THREE.Mesh(glassGeo, new THREE.ShaderMaterial({
+      transparent: true, depthWrite: false, side: THREE.BackSide, vertexShader: fresnelVS,
+      fragmentShader: 'varying vec3 vN; varying vec3 vV; void main(){ float f = 1.-abs(dot(normalize(vN),normalize(vV))); gl_FragColor = vec4(vec3(0.86,0.87,0.84), 0.10 + 0.35*pow(f,1.5)); }',
+    }));
+    const haze = new THREE.Mesh(glassGeo.clone().scale(0.985, 1, 0.985), new THREE.ShaderMaterial({
+      transparent: true, depthWrite: false, side: THREE.FrontSide, vertexShader: fresnelVS,
+      fragmentShader: 'varying vec3 vN; varying vec3 vV; varying vec3 vP; ' + SURFACE_GLSL + ' void main(){ float f = 1.-abs(dot(normalize(vN),normalize(vV))); float g = vnoise(vP*90.)*0.06; gl_FragColor = vec4(vec3(0.96,0.955,0.94), 0.12 + g + 0.28*pow(f,2.0)); }',
+    }));
+    // glass edge: light passes through more glass at grazing angles -> greyish-green thickness band + bright rim
+    const glassBody = new THREE.Mesh(glassGeo, new THREE.ShaderMaterial({
+      transparent: true, depthWrite: false, side: THREE.FrontSide, vertexShader: fresnelVS,
+      fragmentShader: 'varying vec3 vN; varying vec3 vV; void main(){ float d = abs(dot(normalize(vN),normalize(vV))); float edge = smoothstep(0.45, 0.05, d); float rim = smoothstep(0.12, 0.0, d); vec3 c = mix(vec3(0.88,0.90,0.87), vec3(1.0), rim*0.8); gl_FragColor = vec4(c, edge*0.32 + rim*0.3); }',
+    }));
+    // reflections: physically-shaded black glass, added on top so highlights stay at full strength
     const glassFront = new THREE.Mesh(glassGeo, new THREE.MeshPhysicalMaterial({
-      color: '#f6f4ef', roughness: 0.12, metalness: 0, transparent: true, opacity: 0.22,
-      clearcoat: 1, clearcoatRoughness: 0.08, specularIntensity: 1, depthWrite: false, side: THREE.FrontSide, envMapIntensity: 1.6,
+      color: '#000000', roughness: 0.16, metalness: 0,
+      specularIntensity: 0.9, envMapIntensity: 0.45, transparent: true, depthWrite: false,
+      // add light only: keep destination alpha so the (transparent) canvas does not turn opaque
+      blending: THREE.CustomBlending, blendEquation: THREE.AddEquation, blendSrc: THREE.OneFactor, blendDst: THREE.OneFactor,
+      blendSrcAlpha: THREE.ZeroFactor, blendDstAlpha: THREE.OneFactor,
     }));
-    const glassBack = new THREE.Mesh(glassGeo, new THREE.MeshStandardMaterial({
-      color: '#ebe7df', roughness: 0.6, transparent: true, opacity: 0.28, depthWrite: false, side: THREE.BackSide,
-    }));
-    // soft milky haze inside the chamber (frosting), brighter toward the edges
-    const haze = new THREE.Mesh(glassGeo.clone().scale(0.96, 1, 0.96), new THREE.ShaderMaterial({
-      transparent: true, depthWrite: false, side: THREE.FrontSide,
-      vertexShader: 'varying vec3 vN; varying vec3 vV; void main(){ vec4 mv = modelViewMatrix*vec4(position,1.); vN = normalize(normalMatrix*normal); vV = normalize(-mv.xyz); gl_Position = projectionMatrix*mv; }',
-      fragmentShader: 'varying vec3 vN; varying vec3 vV; void main(){ float f = 1. - abs(dot(normalize(vN), normalize(vV))); gl_FragColor = vec4(vec3(0.96,0.95,0.92), 0.1 + 0.55*pow(f,2.2)); }',
-    }));
-    glassBack.renderOrder = 2; haze.renderOrder = 3; glassFront.renderOrder = 4;
+    glassBody.renderOrder = 4;
+    glassBack.renderOrder = 2; haze.renderOrder = 3; glassFront.renderOrder = 5;
     // the cups' inner floors seen through the glass
-    const floorMat = new THREE.MeshStandardMaterial({ color: '#d9d3c7', roughness: 0.85 });
+    const floorMat = new THREE.MeshStandardMaterial({ color: '#A5AE98', roughness: 0.92 });
+    ceramics.push(floorMat);
     for (const sg of [-1, 1]) {
       const f = new THREE.Mesh(new THREE.CircleGeometry(0.3, 96), floorMat);
       f.rotation.x = sg < 0 ? -Math.PI / 2 : Math.PI / 2; f.position.y = sg * 0.297;
       model.add(f);
     }
-    model.add(glassBack, haze, glassFront);
+    model.add(glassBack, haze, glassBody, glassFront);
+    // brass collars hide the seam where the glass meets the ceramic cups
+    for (const sg of [-1, 1]) {
+      const y0 = sg > 0 ? 0.272 : -0.312, y1 = sg > 0 ? 0.312 : -0.272;
+      const col = new THREE.Mesh(new THREE.CylinderGeometry(0.312, 0.312, y1 - y0, 128, 1, true), brass);
+      col.position.y = (y0 + y1) / 2;
+      model.add(col);
+    }
 
     // solid cap: brushed brass ring + recessed ceramic disc (as in the reference photos)
     const capGroup = new THREE.Group();
@@ -358,6 +399,31 @@ export function createScene(canvas, opts = {}) {
     stop() { running = false; },
   };
 }
+
+// ---------- shared GLSL: noise + bump ----------
+const SURFACE_GLSL = `
+float h31(vec3 p){ p = fract(p * 0.3183099 + vec3(0.71, 0.113, 0.419)); p *= 17.0; return fract(p.x * p.y * p.z * (p.x + p.y + p.z)); }
+float vnoise(vec3 x){ vec3 i = floor(x), f = fract(x); f = f*f*(3.0-2.0*f);
+  return mix(mix(mix(h31(i), h31(i+vec3(1,0,0)), f.x), mix(h31(i+vec3(0,1,0)), h31(i+vec3(1,1,0)), f.x), f.y),
+             mix(mix(h31(i+vec3(0,0,1)), h31(i+vec3(1,0,1)), f.x), mix(h31(i+vec3(0,1,1)), h31(i+vec3(1,1,1)), f.x), f.y), f.z); }
+float pits(vec3 p){ vec3 i = floor(p), f = fract(p); float d = 9.0;
+  for (int x=-1;x<=1;x++) for (int y=-1;y<=1;y++) for (int z=-1;z<=1;z++){ vec3 o = vec3(x,y,z); vec3 c = i+o;
+    float k = h31(c); if (k < 0.72) continue; vec3 r = o + vec3(h31(c+3.1), h31(c+7.7), h31(c+1.3)) - f; d = min(d, dot(r,r) * (1.6 - k)); }
+  return smoothstep(0.035, 0.0, d); }
+float ceramicHeight(vec3 p){
+  float g = vnoise(p*260.0)*0.55 + vnoise(p*120.0)*0.35 + vnoise(p*30.0)*0.6;
+  return g - pits(p*48.0)*1.6;
+}
+float brushedHeight(vec3 p){ return vnoise(vec3(p.y*900.0, atan(p.x, p.z)*4.0, 0.0)); }
+`;
+const BUMP_GLSL = `
+vec3 bumpPerturb(vec3 n, float h, float fd){
+  vec3 sx = dFdx(-vViewPosition), sy = dFdy(-vViewPosition);
+  vec3 r1 = cross(sy, n), r2 = cross(n, sx); float det = dot(sx, r1) * fd;
+  vec3 grad = sign(det) * (dFdx(h) * r1 + dFdy(h) * r2);
+  return normalize(abs(det) * n - grad);
+}
+`;
 
 // ---------- procedural textures ----------
 
