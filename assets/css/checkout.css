@@ -14,7 +14,7 @@ body.co a, body.co button { cursor: pointer; }
 .co-form h1 { font-size: clamp(28px, 3vw, 40px); margin-bottom: 28px; }
 .co-box { background: var(--paper); border-radius: 20px; padding: 28px clamp(20px, 3vw, 36px); margin-bottom: 16px; }
 .co-box h2 { font: 400 19px var(--serif); margin-bottom: 22px; display: flex; align-items: baseline; gap: 12px; }
-.co-box h2 span { font: italic 400 16px var(--en); color: var(--brass-d); }
+.co-box h2 span { font: italic 500 16px var(--en); color: var(--brass-d); }
 
 .co-item { display: grid; grid-template-columns: 76px 1fr auto; gap: 18px; padding: 16px 0; border-top: 1px solid var(--line); align-items: start; }
 .co-item:first-child { border-top: 0; padding-top: 0; }
@@ -28,7 +28,7 @@ body.co a, body.co button { cursor: pointer; }
 .f > span { font-size: 13px; color: var(--mute); }
 .co input:not([type=checkbox]):not([type=radio]), .co select {
   width: 100%; height: 50px; padding: 0 16px; border: 1px solid var(--line); border-radius: 12px; background: #fff;
-  font: 300 15px var(--sans); color: var(--ink); transition: border-color .3s, box-shadow .3s; appearance: none; -webkit-appearance: none;
+  font: 400 15px var(--sans); color: var(--ink); transition: border-color .3s, box-shadow .3s; appearance: none; -webkit-appearance: none;
 }
 .co select { background-image: linear-gradient(45deg, transparent 50%, var(--mute) 50%), linear-gradient(135deg, var(--mute) 50%, transparent 50%); background-position: calc(100% - 20px) 22px, calc(100% - 15px) 22px; background-size: 5px 5px; background-repeat: no-repeat; }
 .co input:focus, .co select:focus { outline: none; border-color: var(--ink); box-shadow: 0 0 0 3px rgba(165, 174, 152, .35); }
@@ -97,7 +97,7 @@ body.co a, body.co button { cursor: pointer; }
 .pg-card { padding: 0; overflow: hidden; width: min(420px, 100%); }
 .pg-top { display: flex; justify-content: space-between; align-items: center; padding: 18px 22px; background: var(--ink); color: var(--ivory); }
 .pg-top .x { color: var(--ivory); }
-.pg-brand { font: 400 18px var(--en); letter-spacing: .24em; }
+.pg-brand { font: 500 18px var(--en); letter-spacing: .24em; }
 .pg-brand i { font-style: italic; letter-spacing: .04em; color: var(--brass); }
 .pg-amount { padding: 24px 24px 18px; display: grid; gap: 2px; border-bottom: 1px solid var(--line); }
 .pg-amount span { font-size: 13px; color: var(--mute); }

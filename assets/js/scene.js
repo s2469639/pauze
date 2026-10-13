@@ -352,12 +352,12 @@ export function createScene(canvas, opts = {}) {
       s.t += dt * 0.11 * s.sp;
       if (s.t > 1) { s.t -= 1; s.sx = Math.random() * 6.28; s.r = Math.random(); }
       const t = s.t;
-      const rise = t * 1.5 * state.scale;
+      const rise = t * 0.75 * state.scale;
       const drift = Math.sin(s.sx + t * 2.4) * (0.05 + t * 0.28) * state.scale;
       mPos[i * 3] = flip.position.x + drift + (s.r - 0.5) * 0.22 * state.scale;
       mPos[i * 3 + 1] = topY + rise;
       mPos[i * 3 + 2] = Math.cos(s.sx + t * 2.1) * 0.25 * state.scale;
-      mAlpha[i] = Math.pow(Math.sin(Math.PI * t), 1.5) * (1 - tilt) * 0.16;
+      mAlpha[i] = Math.pow(Math.sin(Math.PI * t), 1.5) * (1 - tilt) * 0.11;
       mSize[i] = (0.9 + t * 2.4) * state.scale;
     }
     mistGeo.attributes.position.needsUpdate = true;

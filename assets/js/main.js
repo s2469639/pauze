@@ -108,7 +108,7 @@ function updateStage() {
 
   if (activeZone === 'hero') {
     const hp = progressOf($('.hero'));
-    Object.assign(t, { x: 0, y: m ? 0.5 + hp * 0.6 : -0.02 + hp * 0.6, scale: (m ? 0.6 : 1) * (1 + hp * 0.12), flip: 0, cap: 0, mist: 0.35, spinSpeed: 0.28 });
+    Object.assign(t, { x: 0, y: m ? 0.5 + hp * 0.6 : -0.02 + hp * 0.6, scale: (m ? 0.6 : 1) * (1 + hp * 0.12), flip: 0, cap: 0, mist: 0, spinSpeed: 0.28 });
   } else if (activeZone === 'ritual') {
     const f = progressOf($('#ritual'));
     const capT = range(f, 0.04, 0.14) - range(f, 0.44, 0.54);
