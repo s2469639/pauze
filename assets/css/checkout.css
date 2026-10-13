@@ -115,8 +115,8 @@ body.co a, body.co button { cursor: pointer; }
 .pg-loading { display: grid; place-items: center; gap: 18px; padding: 60px 0; font-size: 14px; color: var(--mute); }
 .hg { width: 34px; height: 54px; position: relative; animation: hgflip 2.2s var(--ease) infinite; }
 .hg::before, .hg::after { content: ""; position: absolute; left: 0; right: 0; height: 50%; border: 1.5px solid var(--ink); }
-.hg::before { top: 0; clip-path: polygon(0 0, 100% 0, 55% 100%, 45% 100%); background: linear-gradient(transparent 40%, var(--brass) 40%); }
-.hg::after { bottom: 0; clip-path: polygon(45% 0, 55% 0, 100% 100%, 0 100%); background: linear-gradient(transparent 60%, var(--brass) 60%); }
+.hg::before { top: 0; clip-path: polygon(0 0, 100% 0, 55% 100%, 45% 100%); background: rgba(183,160,120,.18); }
+.hg::after { bottom: 0; clip-path: polygon(45% 0, 55% 0, 100% 100%, 0 100%); background: rgba(183,160,120,.18); }
 @keyframes hgflip { 0%, 70% { transform: none; } 100% { transform: rotate(180deg); } }
 .pg-demo { margin: 0; padding: 12px 22px 18px; font-size: 11px; color: var(--mute); text-align: center; }
 
