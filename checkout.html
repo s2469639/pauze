@@ -1,0 +1,166 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>주문/결제 — PAUZE</title>
+<meta name="robots" content="noindex">
+<meta name="theme-color" content="#F2EEE6">
+<link rel="icon" href="/assets/img/favicon.svg" type="image/svg+xml">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,400;0,500;1,400&family=Noto+Serif+KR:wght@300;400&family=Noto+Sans+KR:wght@300;400;500&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="/assets/css/style.css">
+<link rel="stylesheet" href="/assets/css/checkout.css">
+</head>
+<body class="co">
+
+<header class="co-head">
+  <a class="logo" href="/">PAUZE</a>
+  <ol class="co-steps" aria-label="주문 단계">
+    <li class="done">장바구니</li>
+    <li class="on" aria-current="step">주문/결제</li>
+    <li>주문 완료</li>
+  </ol>
+  <a class="co-back" href="/#shop">← 쇼핑 계속하기</a>
+</header>
+
+<main class="co-main" data-view="form">
+  <form class="co-form" id="orderForm" novalidate>
+    <h1>주문/결제</h1>
+
+    <section class="co-box">
+      <h2><span>01</span>주문 상품</h2>
+      <div class="co-items" data-items></div>
+    </section>
+
+    <section class="co-box">
+      <h2><span>02</span>주문자 정보</h2>
+      <div class="fields two">
+        <label class="f"><span>이름</span><input name="buyer" autocomplete="name" required placeholder="홍길동"></label>
+        <label class="f"><span>휴대폰 번호</span><input name="phone" type="tel" inputmode="numeric" autocomplete="tel" required placeholder="010-0000-0000" data-phone></label>
+        <label class="f full"><span>이메일</span><input name="email" type="email" autocomplete="email" required placeholder="name@example.com"></label>
+      </div>
+    </section>
+
+    <section class="co-box">
+      <h2><span>03</span>배송지</h2>
+      <label class="check"><input type="checkbox" id="sameBuyer" checked><i></i>주문자 정보와 동일</label>
+      <div class="fields two">
+        <label class="f"><span>받는 분</span><input name="receiver" autocomplete="shipping name" required></label>
+        <label class="f"><span>연락처</span><input name="rphone" type="tel" inputmode="numeric" required data-phone></label>
+        <div class="f full addr">
+          <span>주소</span>
+          <div class="addr-row"><input name="zip" placeholder="우편번호" readonly required><button type="button" class="btn btn-sm btn-ghost" data-open-addr>주소 검색</button></div>
+          <input name="addr1" placeholder="기본 주소" readonly required>
+          <input name="addr2" placeholder="상세 주소를 입력해 주세요" autocomplete="shipping address-line2" required>
+        </div>
+        <label class="f full"><span>배송 메모</span>
+          <select name="memo">
+            <option value="">배송 메모를 선택해 주세요</option>
+            <option>문 앞에 놓아주세요</option>
+            <option>경비실에 맡겨주세요</option>
+            <option>배송 전 연락 부탁드립니다</option>
+            <option>파손 주의 — 세라믹 제품입니다</option>
+          </select>
+        </label>
+      </div>
+    </section>
+
+    <section class="co-box">
+      <h2><span>04</span>결제 수단</h2>
+      <div class="pay-methods" role="radiogroup" aria-label="결제 수단">
+        <label class="pm"><input type="radio" name="method" value="card" checked><span><b>신용·체크카드</b><small>일시불 / 할부</small></span></label>
+        <label class="pm"><input type="radio" name="method" value="easy"><span><b>간편결제</b><small>등록된 카드·계좌</small></span></label>
+        <label class="pm"><input type="radio" name="method" value="transfer"><span><b>실시간 계좌이체</b><small>은행 앱 인증</small></span></label>
+        <label class="pm"><input type="radio" name="method" value="vbank"><span><b>무통장 입금</b><small>가상계좌 발급</small></span></label>
+      </div>
+      <div class="pay-detail" data-pay-detail="card">
+        <div class="fields two">
+          <label class="f"><span>카드사</span>
+            <select name="cardco"><option value="">카드사 선택</option><option>신한카드</option><option>KB국민카드</option><option>현대카드</option><option>삼성카드</option><option>롯데카드</option><option>하나카드</option><option>우리카드</option><option>NH농협카드</option><option>BC카드</option></select>
+          </label>
+          <label class="f"><span>할부</span>
+            <select name="plan"><option value="0">일시불</option><option value="2">2개월 (무이자)</option><option value="3">3개월 (무이자)</option><option value="6">6개월</option></select>
+          </label>
+        </div>
+      </div>
+      <div class="pay-detail" data-pay-detail="easy" hidden>
+        <div class="easy-grid">
+          <label class="ep"><input type="radio" name="easy" value="PAUZE Pay" checked><span>PAUZE Pay</span></label>
+          <label class="ep"><input type="radio" name="easy" value="간편결제 A"><span>간편결제 A</span></label>
+          <label class="ep"><input type="radio" name="easy" value="간편결제 B"><span>간편결제 B</span></label>
+        </div>
+      </div>
+      <div class="pay-detail" data-pay-detail="transfer" hidden><p class="hint">결제하기를 누르면 은행 인증 창이 열립니다.</p></div>
+      <div class="pay-detail" data-pay-detail="vbank" hidden>
+        <label class="f"><span>입금 은행</span><select name="bank"><option>국민은행</option><option>신한은행</option><option>우리은행</option><option>하나은행</option><option>농협은행</option></select></label>
+        <p class="hint">주문 후 24시간 이내 입금하지 않으면 자동 취소됩니다.</p>
+      </div>
+    </section>
+  </form>
+
+  <aside class="co-summary">
+    <div class="sum-card">
+      <h2>결제 금액</h2>
+      <div class="sum-row"><span>상품 금액 (정가)</span><b data-s-list></b></div>
+      <div class="sum-row disc"><span>런칭 혜택 할인</span><b data-s-disc></b></div>
+      <div class="sum-row"><span>배송비</span><b data-s-ship></b></div>
+      <div class="sum-row total"><span>최종 결제 금액</span><b data-s-total></b></div>
+      <p class="free-hint" data-s-hint></p>
+
+      <div class="agree">
+        <label class="check all"><input type="checkbox" id="agreeAll"><i></i><b>전체 동의</b></label>
+        <label class="check"><input type="checkbox" class="ag" required><i></i>구매 조건 확인 및 결제 진행 동의 (필수)</label>
+        <label class="check"><input type="checkbox" class="ag" required><i></i>개인정보 수집·이용 동의 (필수)</label>
+        <label class="check"><input type="checkbox" class="ag" required><i></i>개인정보 제3자 제공 동의 (필수)</label>
+      </div>
+      <p class="form-err" role="alert" data-err></p>
+      <button class="btn btn-block pay-btn" type="submit" form="orderForm" data-pay>결제하기</button>
+      <p class="secure">🔒 안전한 결제 환경 · 프로젝트 시연용 데모</p>
+    </div>
+  </aside>
+
+  <section class="co-empty" hidden>
+    <p class="eyebrow center">Cart</p>
+    <h1 class="center">장바구니가 비어 있어요.</h1>
+    <p class="center"><a class="btn" href="/#shop">PAUZE 둘러보기</a></p>
+  </section>
+
+  <section class="co-done" hidden>
+    <div class="done-mark" aria-hidden="true"><svg viewBox="0 0 80 80"><circle cx="40" cy="40" r="38" fill="none" stroke="currentColor" stroke-width="1.2"/><path d="M24 41l11 11 21-24" fill="none" stroke="currentColor" stroke-width="1.6"/></svg></div>
+    <p class="eyebrow center" data-done-eyebrow>Order Complete</p>
+    <h1 class="center" data-done-title>주문이 완료되었습니다.</h1>
+    <p class="center sub" data-done-sub>잠시, 향에 머물 준비를 시작할게요.</p>
+    <dl class="done-table" data-done-table></dl>
+    <p class="center"><a class="btn" href="/">홈으로</a></p>
+  </section>
+</main>
+
+<!-- address search (mock) -->
+<div class="modal" id="addrModal" hidden>
+  <div class="modal-card" role="dialog" aria-modal="true" aria-labelledby="addrTitle">
+    <div class="modal-head"><h3 id="addrTitle">주소 검색</h3><button type="button" class="x" data-close aria-label="닫기">×</button></div>
+    <div class="addr-search"><input type="search" placeholder="도로명, 건물명 또는 지번" id="addrQ"><button type="button" class="btn btn-sm" id="addrGo">검색</button></div>
+    <ul class="addr-results" id="addrResults"><li class="hint">예) 성수동, 테헤란로, 연남동</li></ul>
+  </div>
+</div>
+
+<!-- payment window (mock PG) -->
+<div class="modal pg" id="pgModal" hidden>
+  <div class="modal-card pg-card" role="dialog" aria-modal="true" aria-labelledby="pgTitle">
+    <div class="pg-top">
+      <span class="pg-brand">PAUZE <i>Secure Pay</i></span>
+      <button type="button" class="x" data-close aria-label="결제 취소">×</button>
+    </div>
+    <div class="pg-amount"><span>결제 금액</span><b data-pg-amount></b><small data-pg-method></small></div>
+    <div class="pg-body" data-pg-body></div>
+    <p class="pg-demo">프로젝트 시연용 결제 화면입니다. 실제 결제는 이루어지지 않습니다.</p>
+  </div>
+</div>
+
+<script src="/assets/vendor/gsap.min.js"></script>
+<script src="/assets/js/store.js"></script>
+<script src="/assets/js/checkout.js"></script>
+</body>
+</html>
