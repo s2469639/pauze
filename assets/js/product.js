@@ -35,7 +35,7 @@
       cut(c.img, c.name, c.bg), cut(s.img, s.name, '#F1ECE2'), photo('assets/img/starter-set.webp', '스타터 세트 구성')
     ];
     return [
-      cut(c.img, c.name, c.bg), photo('assets/img/life-flip.webp', '손으로 뒤집는 모습'),
+      cut(c.img, c.name, c.bg), photo('assets/img/life-flip.webp', '손으로 뒤집는 모습'), photo('assets/img/step-oil.webp', '오일을 넣는 모습'),
       photo('assets/img/detail-logo-macro.webp', '음각 로고 클로즈업'), photo('assets/img/detail-brass-macro.webp', '세라믹과 브라스 클로즈업'),
       photo('assets/img/detail-glass-macro.webp', '유리 챔버 클로즈업'), photo('assets/img/package.webp', '전용 패키지')
     ];
