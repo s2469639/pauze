@@ -165,7 +165,7 @@ function setupReveals() {
   gsap.fromTo('.spec-dim path', { strokeDashoffset: 600, strokeDasharray: 600 }, { strokeDashoffset: 0, duration: 2.4, ease: 'power2.inOut', stagger: 0.15, scrollTrigger: { trigger: '.spec-dim', start: 'top 80%' } });
   $$('.moment').forEach((el, i, all) => {
     if (i === all.length - 1) return;
-    gsap.to(el, { scale: 0.92, filter: 'brightness(.88)', ease: 'none', scrollTrigger: { trigger: all[i + 1], start: 'top bottom', end: 'top 15%', scrub: true } });
+    gsap.fromTo(el, { scale: 1, filter: 'brightness(1)' }, { scale: 0.92, filter: 'brightness(0.82)', ease: 'none', scrollTrigger: { trigger: all[i + 1], start: 'top bottom', end: 'top 15%', scrub: true } });
   });
   $$('.shop-card').forEach((el, i) => gsap.from(el, { y: 80, opacity: 0, duration: 1.3, delay: i * 0.12, ease: 'expo.out', scrollTrigger: { trigger: '.shop-grid', start: 'top 85%' } }));
   gsap.fromTo('.closing-img img', { scale: 1.3 }, { scale: 1, ease: 'none', scrollTrigger: { trigger: '.closing-img', start: 'top bottom', end: 'bottom top', scrub: true } });
@@ -326,7 +326,7 @@ async function boot() {
     .add(() => { document.body.classList.remove('is-loading'); lenis?.start(); }, '-=0.6')
     .from('.hero-word span', { yPercent: 100, opacity: 0, duration: 1.6, ease: 'expo.out', stagger: 0.08 }, '-=0.7')
     .from(canvas, { opacity: 0, y: 60, duration: 1.6, ease: 'expo.out' }, '<0.1')
-    .from(['.hero-left > *', '.hero-right > *', '.nav', '.scroll-cue'], { y: 30, opacity: 0, duration: 1.2, ease: 'expo.out', stagger: 0.08 }, '<0.3');
+    .from(['.hero-left > *', '.hero-right > *', '.nav', '.scroll-cue'], { y: 30, opacity: 0, duration: 1.2, ease: 'expo.out', stagger: 0.08, clearProps: 'transform,opacity' }, '<0.3');
   if (reduced) tl.progress(1);
 }
 boot();
