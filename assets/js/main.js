@@ -1,5 +1,6 @@
 /* PAUZE — page choreography */
 import { createScene } from './scene.js';
+import { GLTFLoader } from '../vendor/loaders/GLTFLoader.js';
 
 const { COLORS, SCENTS, PRODUCTS, won, off, product, color, scent, cart } = window.PAUZE;
 const $ = (s, r = document) => r.querySelector(s);
@@ -43,7 +44,7 @@ $$('.scrub-words').forEach((el) => {
 const colorList = $('.color-list');
 colorList.innerHTML = COLORS.map((c, i) => `
   <li><button type="button" role="radio" aria-checked="${i === 0}" data-i="${i}" class="${i === 0 ? 'on' : ''}">
-    <i style="--c:${c.hex}"></i><span class="cn">${c.name}</span><span class="cm">${c.mood}</span><span class="ch">${c.hex}</span>
+    <i style="--c:${c.hex}"></i><span class="cn">${c.name}</span><span class="cm">${c.line}</span><span class="ch">${c.hex}</span>
   </button></li>`).join('');
 $('.spec-colors').innerHTML = COLORS.map((c) => `<span><i style="--c:${c.hex}"></i>${c.name} <small>${c.hex} · ${c.mood}</small></span>`).join('');
 
@@ -269,6 +270,21 @@ function tick() {
   requestAnimationFrame(tick);
 }
 
+/* ---------- 3D model (embedded so it also works from file://) ---------- */
+const MODEL_YAW = (+(new URLSearchParams(location.search).get('yaw')) || 20) * Math.PI / 180;
+function loadModel() {
+  const b64 = window.PAUZE_GLB;
+  if (!b64) return Promise.resolve(null);
+  return new Promise((resolve) => {
+    try {
+      const bin = atob(b64), buf = new Uint8Array(bin.length);
+      for (let i = 0; i < bin.length; i++) buf[i] = bin.charCodeAt(i);
+      new GLTFLoader().parse(buf.buffer, '', resolve, (e) => { console.warn('model parse failed', e); resolve(null); });
+    } catch (e) { console.warn('model load failed', e); resolve(null); }
+    setTimeout(() => resolve(null), 10000);
+  });
+}
+
 /* ---------- boot ---------- */
 async function boot() {
   renderShop();
@@ -280,7 +296,8 @@ async function boot() {
   gsap.from('.loader-word span', { yPercent: 110, duration: 1.1, ease: 'expo.out', stagger: 0.07 });
 
   try { await Promise.race([document.fonts.ready, new Promise((r) => setTimeout(r, 2500))]); } catch (e) {}
-  try { stage = createScene(canvas); stage.setColor(COLORS[0].hex); } catch (e) { console.warn('3D unavailable', e); document.body.classList.add('no-3d'); }
+  const gltf = await loadModel();
+  try { stage = createScene(canvas, { gltf, modelYaw: MODEL_YAW }); stage.setColor(COLORS[0].hex); } catch (e) { console.warn('3D unavailable', e); document.body.classList.add('no-3d'); }
   await new Promise((r) => setTimeout(r, reduced ? 0 : 700));
 
   setupReveals();

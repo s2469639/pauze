@@ -1,10 +1,10 @@
 /* PAUZE — product data + cart (shared by index.html and checkout.html) */
 (function () {
   var COLORS = [
-    { key: 'sage',    name: 'Misty Sage',    hex: '#A5AE98', mood: '시그니처 그린', bg: '#E6E8DE', img: 'assets/img/color-sage.webp' },
-    { key: 'oatmeal', name: 'Oatmeal Beige', hex: '#C8B8A4', mood: '데일리 내추럴', bg: '#EFE7DB', img: 'assets/img/color-oatmeal.webp' },
-    { key: 'stone',   name: 'Stone Gray',    hex: '#777C73', mood: '모던 아키텍처', bg: '#DEDFDA', img: 'assets/img/color-stone.webp' },
-    { key: 'rose',    name: 'Dusty Rose',    hex: '#B98F8C', mood: '감성 포인트',   bg: '#EFE2DE', img: 'assets/img/color-rose.webp' }
+    { key: 'sage',    name: 'Misty Sage',    hex: '#A5AE98', mood: '시그니처 그린', bg: '#E6E8DE', line: '안개가 내려앉은 듯 차분한 세이지 그린.', img: 'assets/img/color-sage.webp' },
+    { key: 'oatmeal', name: 'Oatmeal Beige', hex: '#C8B8A4', mood: '데일리 내추럴', bg: '#EFE7DB', line: '따뜻한 여백을 닮은 오트밀 베이지.', img: 'assets/img/color-oatmeal.webp' },
+    { key: 'stone',   name: 'Stone Gray',    hex: '#777C73', mood: '모던 아키텍처', bg: '#DEDFDA', line: '절제된 분위기의 스톤 그레이.', img: 'assets/img/color-stone.webp' },
+    { key: 'rose',    name: 'Dusty Rose',    hex: '#B98F8C', mood: '감성 포인트',   bg: '#EFE2DE', line: '은은한 온기를 더하는 더스티 로즈.', img: 'assets/img/color-rose.webp' }
   ];
 
   // 시그니처 오일 4종

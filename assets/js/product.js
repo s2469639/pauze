@@ -156,7 +156,7 @@
   }
 
   var spec = {
-    object: [['크기', '높이 125mm × 지름 82mm'], ['소재', '무광 세라믹 질감, 반투명 유리 챔버, 매트 샴페인 브라스'], ['방식', '무전원 아날로그 (플립형 루틴 오브제)'], ['컬러', P.COLORS.map(function (c) { return c.name; }).join(' · ')], ['구성', p.includes.join(', ')]],
+    object: [['제품명', '센트글라스 (Scentglass)'], ['크기', '높이 125mm × 최대 지름 82mm (허리 약 Ø32mm)'], ['주입구', 'Ø14mm 센터 오일 주입구'], ['소재', '무광 세라믹 질감, 반투명 프로스트 유리 챔버, 브러시드 샴페인 브라스'], ['방식', '전원 없이 사용하는 아날로그 루틴 오브제'], ['컬러', P.COLORS.map(function (c) { return c.name; }).join(' · ')], ['구성', p.includes.join(', ')]],
     starter: [['크기', '센트글라스 높이 125mm × 지름 82mm · 오일 10ml'], ['소재', '무광 세라믹 질감, 반투명 유리 챔버, 매트 샴페인 브라스'], ['방식', '무전원 아날로그 (플립형 루틴 오브제)'], ['컬러', P.COLORS.map(function (c) { return c.name; }).join(' · ')], ['향', P.SCENTS.map(function (s) { return s.name; }).join(' · ')], ['구성', p.includes.join(', ')]],
     oil: [['용량', '10ml'], ['향', P.SCENTS.map(function (s) { return s.name; }).join(' · ')], ['용기', '프로스트 유리 드로퍼 보틀, 브러시드 브라스 캡'], ['사용', 'PAUZE 오브제 전용 시그니처 오일'], ['보관', '직사광선을 피해 서늘한 곳에 보관']]
   }[p.id];

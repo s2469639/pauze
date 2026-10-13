@@ -11,7 +11,7 @@ const glassR = (y) => NECK + 0.462 * Math.pow(Math.min(Math.abs(y), BULB) / BULB
 const BODY_R = 0.645;
 const CIRC = Math.PI * 2 * BODY_R;                   // world units around the body
 
-export function createScene(canvas) {
+export function createScene(canvas, opts = {}) {
   const renderer = new THREE.WebGLRenderer({ canvas, antialias: true, alpha: true, powerPreference: 'high-performance' });
   renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
   renderer.toneMapping = THREE.NeutralToneMapping;
@@ -52,7 +52,7 @@ export function createScene(canvas) {
   const ceramics = [ceramicLow, ceramicUp, ceramicCap];
 
   const brass = new THREE.MeshPhysicalMaterial({
-    color: '#d6c6a3', metalness: 1, roughness: 0.32, roughnessMap: brushed, bumpMap: brushed, bumpScale: 0.25,
+    color: '#c9ad80', metalness: 1, roughness: 0.36, roughnessMap: brushed, bumpMap: brushed, bumpScale: 0.25,
     anisotropy: 0.75, anisotropyRotation: 0, clearcoat: 0.15, clearcoatRoughness: 0.4,
   });
 
@@ -69,6 +69,8 @@ export function createScene(canvas) {
   const spin = new THREE.Group();     // idle rotation around Y
   flip.add(spin);
   scene.add(flip);
+  const proc = new THREE.Group();     // procedural fallback model
+  spin.add(proc);
 
   const lathe = (pts, mat, seg = 128) => {
     const m = new THREE.Mesh(new THREE.LatheGeometry(pts.map(([x, y]) => new THREE.Vector2(x, y)), seg), mat);
@@ -97,40 +99,40 @@ export function createScene(canvas) {
     pts.push([0, -0.338]);
     return pts;
   };
-  spin.add(lathe(cupProfile(), ceramicLow));
+  proc.add(lathe(cupProfile(), ceramicLow));
   const upper = lathe(cupProfile(), ceramicUp);
   upper.rotation.set(Math.PI, 0, 0);            // mirrored top cup (logo only on the lower one)
-  spin.add(upper);
-  spin.add(ring(0.662, -1.0, -0.948));            // base
-  spin.add(ring(0.532, -0.345, -0.298, 0.008));   // lower collar
-  spin.add(ring(0.532, 0.298, 0.345, 0.008));     // upper collar
+  proc.add(upper);
+  proc.add(ring(0.662, -1.0, -0.948));            // base
+  proc.add(ring(0.532, -0.345, -0.298, 0.008));   // lower collar
+  proc.add(ring(0.532, 0.298, 0.345, 0.008));     // upper collar
 
   // cap: brass rim + recessed ceramic disk (lifts during "prepare")
   const cap = new THREE.Group();
   cap.add(ring(0.662, 0.948, 1.0));
   const disk = lathe([[0, 0.993], [0.58, 0.993], [0.6, 0.999]], ceramicCap);
   cap.add(disk);
-  spin.add(cap);
+  proc.add(cap);
 
   // oil port on top of the upper cup, revealed when the cap lifts
   const port = new THREE.Mesh(new THREE.CircleGeometry(0.075, 48), new THREE.MeshStandardMaterial({ color: '#2b2924', roughness: 0.6 }));
   port.rotation.x = -Math.PI / 2; port.position.y = 0.9515;
   const portRim = new THREE.Mesh(new THREE.TorusGeometry(0.083, 0.012, 16, 64), new THREE.MeshStandardMaterial({ color: '#c9cbcc', metalness: 1, roughness: 0.3 }));
   portRim.rotation.x = Math.PI / 2; portRim.position.y = 0.952;
-  spin.add(port, portRim);
+  proc.add(port, portRim);
 
   // glass (empty, frosted)
   const gpts = [];
   for (let i = 0; i <= 80; i++) { const y = -BULB + (2 * BULB * i) / 80; gpts.push([glassR(y), y]); }
   const glassMesh = lathe(gpts, glassOuter, 128); glassMesh.renderOrder = 3;
   const hazeMesh = lathe(gpts.map(([x, y]) => [Math.max(0.004, x - 0.012), y]), glassInner, 96); hazeMesh.renderOrder = 2;
-  spin.add(hazeMesh, glassMesh);
+  proc.add(hazeMesh, glassMesh);
   const floorMat = new THREE.MeshStandardMaterial({ color: '#ddd8cf', roughness: 0.9 });
   for (const sgn of [-1, 1]) {
     const f = new THREE.Mesh(new THREE.CircleGeometry(glassR(BULB) + 0.01, 96), floorMat);
     f.rotation.x = sgn < 0 ? -Math.PI / 2 : Math.PI / 2;
     f.position.y = sgn * (BULB - 0.003);
-    spin.add(f);
+    proc.add(f);
   }
 
   // contact shadow (world space, does not flip)
@@ -159,14 +161,131 @@ export function createScene(canvas) {
   mist.renderOrder = 5;
   scene.add(mist);
 
+  // ---------- textured GLB model (preferred) ----------
+  let capObj = cap;
+  const tintUniform = { value: new THREE.Color('#A5AE98') };
+  if (opts.gltf) {
+    proc.visible = false;
+    capObj = attachModel(opts.gltf);
+  }
+
+  function attachModel(gltf) {
+    let src = null;
+    gltf.scene.traverse((o) => { if (o.isMesh && !src) src = o; });
+    const geo = src.geometry.index ? src.geometry.toNonIndexed() : src.geometry.clone();
+    const mat = src.material.clone();
+    mat.side = THREE.FrontSide;
+    for (const t of [mat.map, mat.normalMap, mat.metalnessMap, mat.roughnessMap]) if (t) t.anisotropy = maxAniso;
+    // recolor only the sage ceramic texels; brass and glass keep their baked colour
+    mat.onBeforeCompile = (sh) => {
+      sh.uniforms.uTint = tintUniform;
+      sh.fragmentShader = 'uniform vec3 uTint;\n' + sh.fragmentShader.replace('#include <map_fragment>', `#include <map_fragment>
+        {
+          vec3 lin = diffuseColor.rgb;
+          vec3 sc = pow(max(lin, vec3(0.0)), vec3(1.0 / 2.2));
+          float warm = sc.r - sc.b;
+          float lum = dot(sc, vec3(0.299, 0.587, 0.114));
+          float sage = (1.0 - smoothstep(0.09, 0.16, warm)) * (1.0 - smoothstep(0.62, 0.70, lum)) * smoothstep(0.015, 0.05, sc.g - sc.b);
+          vec3 refLin = vec3(0.376, 0.423, 0.314);   // #A5AE98 → reproduces the baked texture
+          vec3 recol = uTint * clamp(lin / refLin, 0.0, 2.0);
+          diffuseColor.rgb = mix(lin, recol, sage);
+        }`);
+    };
+    mat.customProgramCacheKey = () => 'pauze-tint';
+
+    // drop the baked cap (rebuilt below so it can open) and the opaque waist (replaced by real glass)
+    const CUT = 0.885, GLASS = 0.286;
+    const pos = geo.attributes.position;
+    const keep = [[], []];
+    for (let t = 0; t < pos.count; t += 3) {
+      const cy = (pos.getY(t) + pos.getY(t + 1) + pos.getY(t + 2)) / 3;
+      if (cy > CUT || Math.abs(cy) < GLASS) continue;
+      keep[0].push(t);
+    }
+    const sub = (tris) => {
+      const g = new THREE.BufferGeometry();
+      for (const name of Object.keys(geo.attributes)) {
+        const at = geo.attributes[name], n = at.itemSize;
+        const arr = new at.array.constructor(tris.length * 3 * n);
+        tris.forEach((t, k) => { for (let v = 0; v < 3; v++) for (let c = 0; c < n; c++) arr[(k * 3 + v) * n + c] = at.array[(t + v) * n + c]; });
+        g.setAttribute(name, new THREE.BufferAttribute(arr, n));
+      }
+      return g;
+    };
+    const body = new THREE.Mesh(sub(keep[0]), mat);
+    const model = new THREE.Group();
+    model.add(body);
+
+    // frosted glass waist, following the scanned profile
+    const prof = [[0, 0.098], [0.04, 0.113], [0.08, 0.135], [0.12, 0.162], [0.16, 0.19], [0.2, 0.218], [0.24, 0.25], [0.28, 0.282], [0.3, 0.298]];
+    const gpts = [];
+    for (let i = prof.length - 1; i >= 0; i--) gpts.push(new THREE.Vector2(prof[i][1], -prof[i][0]));
+    for (let i = 1; i < prof.length; i++) gpts.push(new THREE.Vector2(prof[i][1], prof[i][0]));
+    const glassGeo = new THREE.LatheGeometry(gpts, 128);
+    const glassFront = new THREE.Mesh(glassGeo, new THREE.MeshPhysicalMaterial({
+      color: '#f6f4ef', roughness: 0.12, metalness: 0, transparent: true, opacity: 0.22,
+      clearcoat: 1, clearcoatRoughness: 0.08, specularIntensity: 1, depthWrite: false, side: THREE.FrontSide, envMapIntensity: 1.6,
+    }));
+    const glassBack = new THREE.Mesh(glassGeo, new THREE.MeshStandardMaterial({
+      color: '#ebe7df', roughness: 0.6, transparent: true, opacity: 0.28, depthWrite: false, side: THREE.BackSide,
+    }));
+    // soft milky haze inside the chamber (frosting), brighter toward the edges
+    const haze = new THREE.Mesh(glassGeo.clone().scale(0.96, 1, 0.96), new THREE.ShaderMaterial({
+      transparent: true, depthWrite: false, side: THREE.FrontSide,
+      vertexShader: 'varying vec3 vN; varying vec3 vV; void main(){ vec4 mv = modelViewMatrix*vec4(position,1.); vN = normalize(normalMatrix*normal); vV = normalize(-mv.xyz); gl_Position = projectionMatrix*mv; }',
+      fragmentShader: 'varying vec3 vN; varying vec3 vV; void main(){ float f = 1. - abs(dot(normalize(vN), normalize(vV))); gl_FragColor = vec4(vec3(0.96,0.95,0.92), 0.1 + 0.55*pow(f,2.2)); }',
+    }));
+    glassBack.renderOrder = 2; haze.renderOrder = 3; glassFront.renderOrder = 4;
+    // the cups' inner floors seen through the glass
+    const floorMat = new THREE.MeshStandardMaterial({ color: '#d9d3c7', roughness: 0.85 });
+    for (const sg of [-1, 1]) {
+      const f = new THREE.Mesh(new THREE.CircleGeometry(0.3, 96), floorMat);
+      f.rotation.x = sg < 0 ? -Math.PI / 2 : Math.PI / 2; f.position.y = sg * 0.297;
+      model.add(f);
+    }
+    model.add(glassBack, haze, glassFront);
+
+    // solid cap: brushed brass ring + recessed ceramic disc (as in the reference photos)
+    const capGroup = new THREE.Group();
+    const R0 = 0.415, h0 = CUT - 0.002, h1 = 0.95, e = 0.008;
+    const ringPts = [[0.36, h0], [R0 - e, h0], [R0, h0 + e], [R0, h1 - e], [R0 - e, h1], [0.372, h1], [0.366, h1 - 0.012]].map(([x, y]) => new THREE.Vector2(x, y));
+    capGroup.add(new THREE.Mesh(new THREE.LatheGeometry(ringPts, 128), brass));
+    const discMat = new THREE.MeshStandardMaterial({ color: '#A5AE98', roughness: 0.9, map: upperTex.map, bumpMap: upperTex.bump, bumpScale: 0.5 });
+    ceramics.push(discMat);
+    const disc = new THREE.Mesh(new THREE.CylinderGeometry(0.368, 0.368, 0.05, 96), discMat);
+    disc.position.y = h1 - 0.012 - 0.025;
+    capGroup.add(disc);
+    model.add(capGroup);
+
+    // revealed when the cap lifts: recessed ceramic top with a silver refill port
+    const topMat = new THREE.MeshStandardMaterial({ color: '#A5AE98', roughness: 0.9, map: upperTex.map, bumpMap: upperTex.bump, bumpScale: 0.5 });
+    ceramics.push(topMat);
+    const top = new THREE.Mesh(new THREE.CircleGeometry(0.404, 96), topMat);
+    top.rotation.x = -Math.PI / 2; top.position.y = CUT - 0.004;
+    const hole = new THREE.Mesh(new THREE.CircleGeometry(0.05, 48), new THREE.MeshStandardMaterial({ color: '#2b2924', roughness: 0.6 }));
+    hole.rotation.x = -Math.PI / 2; hole.position.y = CUT - 0.002;
+    const grommet = new THREE.Mesh(new THREE.TorusGeometry(0.056, 0.01, 16, 64), new THREE.MeshStandardMaterial({ color: '#c9cbcc', metalness: 1, roughness: 0.3 }));
+    grommet.rotation.x = Math.PI / 2; grommet.position.y = CUT - 0.001;
+    model.add(top, hole, grommet);
+
+    // normalise to the same footprint as the procedural model (height -1..1)
+    const s = 2 / 1.9;
+    model.scale.setScalar(s);
+    model.rotation.y = opts.modelYaw || 0;
+    spin.add(model);
+    return capGroup;
+  }
+
   // ---------- state (driven from outside) ----------
   const state = { x: 0, y: 0, scale: 1, flip: 0, spin: 0, tiltX: 0, tiltY: 0, cap: 0, mist: 0 };
   const target = { ...state, spinSpeed: 0.22, visible: true };
 
   // ---------- color ----------
   const colorTo = new THREE.Color('#A5AE98');
-  function setColor(hex) { colorTo.set(hex); }
+  const colorToLin = new THREE.Color();
+  function setColor(hex) { colorTo.set(hex); colorToLin.set(hex); }
   for (const m of ceramics) m.color.copy(colorTo);
+  colorToLin.set('#A5AE98'); tintUniform.value.copy(colorToLin);
 
   // ---------- sizing / loop ----------
   function resize() {
@@ -211,18 +330,20 @@ export function createScene(canvas) {
     const dt = Math.min(clock.getDelta(), 0.05);
     const k = 1 - Math.pow(0.0009, dt);     // damping
     for (const key of ['x', 'y', 'scale', 'flip', 'cap', 'mist', 'tiltX', 'tiltY']) state[key] += (target[key] - state[key]) * k;
-    state.spin += dt * target.spinSpeed;
+    if (!window.__PAUZE_FREEZE) state.spin += dt * target.spinSpeed;
 
     flip.position.set(state.x * halfWidthAtZero(), state.y, 0);
     flip.scale.setScalar(state.scale);
     flip.rotation.set(state.tiltX, 0, state.flip + state.tiltY * 0.3);
     spin.rotation.y = state.spin;
-    cap.position.y = state.cap * 0.26;
-    cap.rotation.y = state.cap * 1.4;
+    const c = state.cap;
+    capObj.position.set(0, c * 0.2, -c * 0.05);
+    capObj.rotation.set(-c * 0.32, 0, 0);
     shadow.position.set(flip.position.x, state.y - 1.06 * state.scale, 0);
     shadow.scale.setScalar(state.scale * (1 - Math.abs(Math.sin(state.flip)) * 0.25));
 
     for (const m of ceramics) m.color.lerp(colorTo, k * 0.8);
+    tintUniform.value.lerp(colorToLin, k * 0.8);
     if (state.mist > 0.003 || target.mist > 0) updateMist(dt); else mistMat.uniforms.uAmount.value = 0;
 
     if (target.visible) renderer.render(scene, camera);
