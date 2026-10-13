@@ -106,25 +106,36 @@ function updateStage() {
   t.tiltX = mouse.y * 0.12;
   t.tiltY = -mouse.x * 0.25;
 
+  t.oil = false;
   if (activeZone === 'hero') {
     const hp = progressOf($('.hero'));
-    Object.assign(t, { x: 0, y: m ? 0.5 + hp * 0.6 : -0.02 + hp * 0.6, scale: (m ? 0.6 : 1) * (1 + hp * 0.12), flip: 0, cap: 0, mist: 0, spinSpeed: 0.28 });
+    Object.assign(t, { x: 0, y: m ? 0.5 + hp * 0.6 : -0.02 + hp * 0.6, scale: (m ? 0.6 : 1) * (1 + hp * 0.12), flip: 0, cap: 0, mist: 0, explode: 0, spinSpeed: 0.28 });
   } else if (activeZone === 'ritual') {
     const f = progressOf($('#ritual'));
-    const capT = range(f, 0.04, 0.14) - range(f, 0.44, 0.54);
-    const flipT = ease(range(f, 0.62, 0.8));
-    const mistT = range(f, 0.8, 0.86) - range(f, 0.95, 1);
+    // 01 open · 02 two drops of oil · 03 close · 04 flip = scent on · 05 flip back = scent off
+    const capT = range(f, 0.03, 0.11) - range(f, 0.38, 0.46);
+    const flipT = ease(range(f, 0.5, 0.64)) + ease(range(f, 0.8, 0.92));
+    const mistT = range(f, 0.64, 0.7) - range(f, 0.8, 0.86);
+    const step = f < 0.17 ? 0 : f < 0.37 ? 1 : f < 0.48 ? 2 : f < 0.78 ? 3 : 4;
     Object.assign(t, {
-      x: m ? 0 : 0.3, y: m ? 0.22 : 0, scale: m ? 0.56 : 1.05,
-      cap: ease(capT), flip: flipT * Math.PI, mist: mistT, spinSpeed: 0.08,
+      x: m ? 0 : 0.3, y: m ? 0.22 : (step === 1 ? -0.25 : 0), scale: m ? 0.56 : 1.05,
+      cap: ease(capT), flip: flipT * Math.PI, mist: mistT, explode: 0, spinSpeed: step === 1 ? 0.02 : 0.08,
+      oil: step === 1,
     });
-    const step = f < 0.22 ? 0 : f < 0.42 ? 1 : f < 0.58 ? 2 : 3;
+    if (step === 1) t.tiltX = 0.42;   // tip the top toward the camera so the drops land visibly
     $$('.ritual-steps li').forEach((li, i) => li.classList.toggle('on', i === step));
     $('.ritual-progress i').style.transform = `scaleY(${f})`;
+    t.oil = activeZone === 'ritual' && t.oil;
+  } else if (activeZone === 'inside') {
+    const p = progressOf($('#inside'));
+    const e = range(p, 0.08, 0.6);
+    Object.assign(t, { x: m ? 0 : -0.42, y: m ? 0.75 : 0.05 - e * 0.1, scale: (m ? 0.42 : 0.82) - e * (m ? 0.08 : 0.16), flip: TAU, cap: 0, mist: 0, explode: e, spinSpeed: 0.12 });
+    const n = Math.round(range(p, 0.05, 0.7) * 8);
+    $$('.inside-parts li').forEach((li, i) => li.classList.toggle('on', i < n));
   } else if (activeZone === 'colors') {
     const c = progressOf($('#colors'));
     setColorIdx(Math.min(COLORS.length - 1, Math.floor(c * COLORS.length)));
-    Object.assign(t, { x: m ? 0 : -0.42, y: m ? 0.62 : -0.05, scale: m ? 0.46 : 1.05, flip: TAU, cap: 0, mist: 0, spinSpeed: 0.18 });
+    Object.assign(t, { x: m ? 0 : -0.42, y: m ? 0.62 : -0.05, scale: m ? 0.46 : 1.05, flip: TAU, cap: 0, mist: 0, explode: 0, spinSpeed: 0.18 });
   }
 }
 

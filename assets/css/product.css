@@ -91,7 +91,7 @@ html { scroll-padding-top: 130px; }
 .d-split p { color: var(--mute); }
 .d-arch, .d-photo { margin: 0; overflow: hidden; }
 .d-arch { aspect-ratio: 4 / 5; border-radius: 400px 400px 24px 24px; }
-.d-photo { aspect-ratio: 16 / 11; border-radius: 22px; }
+.d-photo { aspect-ratio: 16 / 9; border-radius: 22px; }
 .d-arch img, .d-photo img { width: 100%; height: 100%; object-fit: cover; }
 .d-points { list-style: none; padding: 0; margin: 30px 0 0; }
 .d-points li { padding: 16px 0; border-top: 1px solid var(--line); color: var(--mute); font-size: 15px; }
@@ -236,3 +236,17 @@ html { scroll-padding-top: 130px; }
   .inside-side { grid-template-columns: 1fr 110px; }
   .inside-video { width: 110px; }
 }
+
+/* 3D viewer slide */
+.g-slide.viewer { background: radial-gradient(120% 90% at 50% 38%, #fbf9f5 0%, #ebe5d9 100%); position: relative; }
+.viewer3d { position: absolute; inset: 0; }
+.viewer3d canvas { width: 100%; height: 100%; display: block; cursor: grab; }
+.viewer3d canvas:active { cursor: grabbing; }
+.v-load { position: absolute; inset: 0; display: none; place-items: center; margin: 0; font-size: 13px; color: var(--mute); }
+.viewer3d.is-loading .v-load, .viewer3d.failed .v-load { display: grid; }
+.v-ui { position: absolute; left: 50%; bottom: 46px; transform: translateX(-50%); display: flex; gap: 6px; padding: 5px; border-radius: 99px; background: rgba(255, 255, 255, .72); backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px); box-shadow: 0 6px 20px rgba(60, 50, 35, .08); }
+.v-ui button { border: 0; background: none; padding: 9px 16px; border-radius: 99px; font: 500 13px var(--sans); color: var(--ink); white-space: nowrap; transition: background .3s, color .3s; }
+.v-ui button.on { background: var(--ink); color: var(--ivory); }
+.v-hint { position: absolute; left: 0; right: 0; bottom: 16px; margin: 0; text-align: center; font-size: 12px; color: var(--mute); pointer-events: none; }
+.g-thumbs .v3d { display: grid; place-items: center; background: #ebe5d9; }
+.g-thumbs .v3d span { font: 600 13px var(--sans); letter-spacing: .08em; color: var(--ink); border: 1px solid var(--ink); border-radius: 99px; padding: 3px 9px; }

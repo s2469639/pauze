@@ -1,9 +1,9 @@
 {
   "name": "pauze",
   "private": true,
-  "description": "PAUZE brand site — static HTML/CSS/JS",
+  "description": "PAUZE brand site \u2014 static HTML/CSS/JS",
   "scripts": {
-    "build": "esbuild assets/js/main.js --bundle --minify --format=iife --target=es2019 --alias:three=./assets/vendor/three.module.min.js --outfile=assets/js/app.bundle.js"
+    "build": "esbuild assets/js/main.js --bundle --minify --format=iife --target=es2019 --alias:three=./assets/vendor/three.module.min.js --outfile=assets/js/app.bundle.js && esbuild assets/js/viewer.js --bundle --minify --format=iife --target=es2019 --alias:three=./assets/vendor/three.module.min.js --outfile=assets/js/viewer.bundle.js"
   },
   "devDependencies": {
     "esbuild": "0.24.0"

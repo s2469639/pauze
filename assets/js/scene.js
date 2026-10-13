@@ -163,6 +163,8 @@ export function createScene(canvas, opts = {}) {
 
   // ---------- textured GLB model (preferred) ----------
   let capObj = cap;
+  let explodeParts = null;
+  let updateOil = null;
   const tintUniform = { value: new THREE.Color('#A5AE98') };
   if (opts.gltf) {
     proc.visible = false;
@@ -218,11 +220,11 @@ export function createScene(canvas, opts = {}) {
     // drop the baked cap (rebuilt below so it can open) and the opaque waist (replaced by real glass)
     const CUT = 0.885, GLASS = 0.286;
     const pos = geo.attributes.position;
-    const keep = [[], []];
+    const keep = [[], []];   // [upper cup, lower cup]
     for (let t = 0; t < pos.count; t += 3) {
       const cy = (pos.getY(t) + pos.getY(t + 1) + pos.getY(t + 2)) / 3;
       if (cy > CUT || Math.abs(cy) < GLASS) continue;
-      keep[0].push(t);
+      keep[cy > 0 ? 0 : 1].push(t);
     }
     const sub = (tris) => {
       const g = new THREE.BufferGeometry();
@@ -234,9 +236,12 @@ export function createScene(canvas, opts = {}) {
       }
       return g;
     };
-    const body = new THREE.Mesh(sub(keep[0]), mat);
     const model = new THREE.Group();
-    model.add(body);
+    // part groups, so the object can be pulled apart into an exploded view
+    const upperG = new THREE.Group(), glassG = new THREE.Group(), lowerG = new THREE.Group(), innerG = new THREE.Group();
+    model.add(upperG, glassG, lowerG, innerG);
+    upperG.add(new THREE.Mesh(sub(keep[0]), mat));
+    lowerG.add(new THREE.Mesh(sub(keep[1]), mat));
 
     // frosted glass waist, following the scanned profile
     const prof = [[0, 0.098], [0.04, 0.113], [0.08, 0.135], [0.12, 0.162], [0.16, 0.19], [0.2, 0.218], [0.24, 0.25], [0.28, 0.282], [0.3, 0.298]];
@@ -275,16 +280,41 @@ export function createScene(canvas, opts = {}) {
     for (const sg of [-1, 1]) {
       const f = new THREE.Mesh(new THREE.CircleGeometry(0.3, 96), floorMat);
       f.rotation.x = sg < 0 ? -Math.PI / 2 : Math.PI / 2; f.position.y = sg * 0.297;
-      model.add(f);
+      (sg > 0 ? upperG : lowerG).add(f);
     }
-    model.add(glassBack, haze, glassBody, glassFront);
+    glassG.add(glassBack, haze, glassBody, glassFront);
     // brass collars hide the seam where the glass meets the ceramic cups
     for (const sg of [-1, 1]) {
       const y0 = sg > 0 ? 0.272 : -0.312, y1 = sg > 0 ? 0.312 : -0.272;
       const col = new THREE.Mesh(new THREE.CylinderGeometry(0.312, 0.312, y1 - y0, 128, 1, true), brass);
       col.position.y = (y0 + y1) / 2;
-      model.add(col);
+      (sg > 0 ? upperG : lowerG).add(col);
     }
+
+    // inner parts (hidden inside the upper cup until exploded): refill funnel, reservoir, diffusion stone
+    const funnel = new THREE.Mesh(new THREE.LatheGeometry([[0.05, 0], [0.06, 0.004], [0.2, 0.05], [0.29, 0.06], [0.3, 0.075], [0.06, 0.075], [0.05, 0]].map(([x, y]) => new THREE.Vector2(x, y)), 96), brass);
+    const resMat = new THREE.MeshPhysicalMaterial({ color: '#f1efe9', roughness: 0.35, transparent: true, opacity: 0.55, clearcoat: 0.6, side: THREE.DoubleSide, depthWrite: false });
+    const reservoir = new THREE.Mesh(new THREE.CylinderGeometry(0.21, 0.17, 0.22, 64, 1, true), resMat);
+    const resFloor = new THREE.Mesh(new THREE.CircleGeometry(0.17, 64), resMat); resFloor.rotation.x = Math.PI / 2; resFloor.position.y = -0.11;
+    const resLip = new THREE.Mesh(new THREE.TorusGeometry(0.212, 0.008, 12, 64), resMat); resLip.rotation.x = Math.PI / 2; resLip.position.y = 0.11;
+    const resG = new THREE.Group(); resG.add(reservoir, resFloor, resLip);
+    const stoneMat = new THREE.MeshStandardMaterial({ color: '#e7e1d6', roughness: 1, map: upperTex.map, bumpMap: upperTex.bump, bumpScale: 1.2 });
+    const stone = new THREE.Mesh(new THREE.CylinderGeometry(0.11, 0.11, 0.09, 48), stoneMat);
+    const stoneHole = new THREE.Mesh(new THREE.CircleGeometry(0.035, 32), new THREE.MeshStandardMaterial({ color: '#b9b2a5', roughness: 1 }));
+    stoneHole.rotation.x = -Math.PI / 2; stoneHole.position.y = 0.0451; stone.add(stoneHole);
+    innerG.add(funnel, resG, stone);
+    innerG.visible = false;
+    explodeParts = (e) => {
+      const ee = e * e * (3 - 2 * e);
+      upperG.position.y = ee * 0.95;
+      lowerG.position.y = -ee * 0.55;
+      capGroup.userData.explode = ee * 1.45;
+      innerG.visible = e > 0.01;
+      funnel.position.y = 0.72 + ee * 0.35;
+      resG.position.y = 0.6 + ee * 0.28;
+      stone.position.y = 0.42 + ee * 0.12;
+      resMat.opacity = 0.55 * Math.min(1, e * 3);
+    };
 
     // solid cap: brushed brass ring + recessed ceramic disc (as in the reference photos)
     const capGroup = new THREE.Group();
@@ -307,7 +337,84 @@ export function createScene(canvas, opts = {}) {
     hole.rotation.x = -Math.PI / 2; hole.position.y = CUT - 0.002;
     const grommet = new THREE.Mesh(new THREE.TorusGeometry(0.056, 0.01, 16, 64), new THREE.MeshStandardMaterial({ color: '#c9cbcc', metalness: 1, roughness: 0.3 }));
     grommet.rotation.x = Math.PI / 2; grommet.position.y = CUT - 0.001;
-    model.add(top, hole, grommet);
+    upperG.add(top, hole, grommet);
+
+    // ---- oil dropper + two real-looking drops falling into the refill port ----
+    const oilG = new THREE.Group(); model.add(oilG); oilG.visible = false;
+    const pip = new THREE.Group(); oilG.add(pip);
+    const pipGlassMat = new THREE.MeshPhysicalMaterial({ color: '#ffffff', roughness: 0.05, transparent: true, opacity: 0.35, clearcoat: 1, depthWrite: false });
+    const pipGeo = new THREE.LatheGeometry([[0.004, 0], [0.012, 0.004], [0.016, 0.03], [0.03, 0.2], [0.034, 0.42], [0.0, 0.42]].map(([x, y]) => new THREE.Vector2(x, y)), 48);
+    const pipe = new THREE.Mesh(pipGeo, pipGlassMat);
+    const oilIn = new THREE.Mesh(new THREE.LatheGeometry([[0.003, 0.006], [0.011, 0.03], [0.026, 0.2], [0.026, 0.27], [0, 0.27]].map(([x, y]) => new THREE.Vector2(x, y)), 32),
+      new THREE.MeshStandardMaterial({ color: '#d9b866', roughness: 0.15, transparent: true, opacity: 0.7, depthWrite: false }));
+    const collar = new THREE.Mesh(new THREE.CylinderGeometry(0.06, 0.06, 0.07, 48), brass); collar.position.y = 0.45;
+    const bulb = new THREE.Mesh(new THREE.CapsuleGeometry(0.052, 0.12, 8, 32), brass); bulb.position.y = 0.58;
+    pip.add(pipe, oilIn, collar, bulb);
+    // a drop: lathe teardrop, refractive look = tinted body + add-only reflections
+    const dropProfile = [];
+    for (let i = 0; i <= 24; i++) { const a = (i / 24) * Math.PI; const r = Math.sin(a) * (1 - 0.55 * Math.pow(i / 24, 2.2)); dropProfile.push(new THREE.Vector2(Math.max(0.0001, r), -Math.cos(a) * 1.15)); }
+    const dropGeo = new THREE.LatheGeometry(dropProfile, 48);
+    const dropBodyMat = new THREE.MeshPhysicalMaterial({ color: '#e8c96f', roughness: 0.02, metalness: 0, transparent: true, opacity: 0.62, clearcoat: 1, clearcoatRoughness: 0, ior: 1.47, depthWrite: false });
+    const dropShine = new THREE.MeshPhysicalMaterial({ color: '#000000', roughness: 0.0, envMapIntensity: 1.4, specularIntensity: 1, transparent: true, depthWrite: false,
+      blending: THREE.CustomBlending, blendEquation: THREE.AddEquation, blendSrc: THREE.OneFactor, blendDst: THREE.OneFactor, blendSrcAlpha: THREE.ZeroFactor, blendDstAlpha: THREE.OneFactor });
+    const makeDrop = () => { const g = new THREE.Group(); const b = new THREE.Mesh(dropGeo, dropBodyMat); const sh = new THREE.Mesh(dropGeo, dropShine); b.renderOrder = 6; sh.renderOrder = 7; g.add(b, sh); g.visible = false; oilG.add(g); return g; };
+    const drops = [makeDrop(), makeDrop()];
+    const rippleMat = new THREE.MeshBasicMaterial({ color: '#f3e3b6', transparent: true, opacity: 0, depthWrite: false });
+    const ripple = new THREE.Mesh(new THREE.RingGeometry(0.02, 0.028, 48), rippleMat); ripple.rotation.x = -Math.PI / 2; ripple.position.y = CUT + 0.003; oilG.add(ripple);
+    const pool = new THREE.Mesh(new THREE.CircleGeometry(0.048, 40), new THREE.MeshPhysicalMaterial({ color: '#c9a14a', roughness: 0.05, clearcoat: 1, transparent: true, opacity: 0 }));
+    pool.rotation.x = -Math.PI / 2; pool.position.y = CUT + 0.0025; oilG.add(pool);
+    const TIP = CUT + 0.24;       // pipette tip height when lowered
+    const R = 0.058;              // drop radius
+    let oilT = 0, oilAmt = 0;
+    updateOil = (dt, on) => {
+      oilAmt += ((on ? 1 : 0) - oilAmt) * Math.min(1, dt * 4);
+      oilG.visible = oilAmt > 0.01;
+      if (!oilG.visible) { oilT = 0; pool.material.opacity = 0; return; }
+      if (on) oilT += dt;
+      const CYCLE = 4.2;
+      const t = oilT % CYCLE;
+      // pipette slides in from above, hangs, slides out after the second drop
+      const inOut = Math.min(1, t / 0.6) * (1 - Math.max(0, Math.min(1, (t - 3.5) / 0.6)));
+      const e = inOut * inOut * (3 - 2 * inOut);
+      pip.position.y = TIP + (1 - e) * 0.9;
+      pip.scale.setScalar(1);
+      [[0.7, 1.55], [2.0, 2.85]].forEach(([t0, t1], i) => {
+        const d = drops[i];
+        if (t < t0 || t > t1 + 0.2) { d.visible = false; return; }
+        d.visible = true;
+        const grow = 0.75, fall = 0.42;
+        if (t < t0 + grow) {
+          // swelling at the tip, slightly elongated by gravity, wobbling
+          const g = (t - t0) / grow, gs = 0.35 + 0.65 * Math.pow(g, 0.8);
+          const wob = 1 + Math.sin(t * 26) * 0.03 * g;
+          d.position.set(0, pip.position.y - R * gs * 1.05, 0);
+          d.scale.set(R * gs / wob, R * gs * (1 + 0.25 * g) * wob, R * gs / wob);
+        } else if (t < t0 + grow + fall) {
+          // free fall: accelerate, stretch along the motion, round off
+          const f = (t - t0 - grow) / fall;
+          const y0 = pip.position.y - R * 1.05, y1 = CUT + R * 0.5;
+          d.position.set(0, y0 + (y1 - y0) * f * f, 0);
+          const st = 1 + 0.45 * f;
+          d.scale.set(R / Math.sqrt(st), R * st, R / Math.sqrt(st));
+        } else {
+          // impact: flatten into the port and vanish
+          const k = Math.min(1, (t - t0 - grow - fall) / 0.2);
+          d.position.set(0, CUT + R * 0.3 * (1 - k), 0);
+          d.scale.set(R * (1 + k * 0.8), R * (1 - k) * 0.6 + 0.0005, R * (1 + k * 0.8));
+        }
+        // ripple + growing pool right after each impact
+        const hit = t - (t0 + grow + fall);
+        if (hit > 0 && hit < 0.7) {
+          const r = hit / 0.7;
+          ripple.scale.setScalar(1 + r * 2.2);
+          rippleMat.opacity = (1 - r) * 0.7;
+        }
+      });
+      const poolT = t < 1.55 ? 0 : t < 2.85 ? 0.6 : 1;
+      pool.material.opacity += ((t < 0.3 ? 0 : poolT * 0.85) - pool.material.opacity) * Math.min(1, dt * 6);
+      pool.scale.setScalar(0.6 + 0.4 * poolT);
+      if (t < 0.7) rippleMat.opacity = 0;
+    };
 
     // normalise to the same footprint as the procedural model (height -1..1)
     const s = 2 / 1.9;
@@ -318,7 +425,7 @@ export function createScene(canvas, opts = {}) {
   }
 
   // ---------- state (driven from outside) ----------
-  const state = { x: 0, y: 0, scale: 1, flip: 0, spin: 0, tiltX: 0, tiltY: 0, cap: 0, mist: 0 };
+  const state = { x: 0, y: 0, scale: 1, flip: 0, spin: 0, tiltX: 0, tiltY: 0, cap: 0, mist: 0, explode: 0 };
   const target = { ...state, spinSpeed: 0.22, visible: true };
 
   // ---------- color ----------
@@ -370,7 +477,9 @@ export function createScene(canvas, opts = {}) {
     if (!running) return;
     const dt = Math.min(clock.getDelta(), 0.05);
     const k = 1 - Math.pow(0.0009, dt);     // damping
-    for (const key of ['x', 'y', 'scale', 'flip', 'cap', 'mist', 'tiltX', 'tiltY']) state[key] += (target[key] - state[key]) * k;
+    for (const key of ['x', 'y', 'scale', 'flip', 'cap', 'mist', 'tiltX', 'tiltY', 'explode']) state[key] += (target[key] - state[key]) * k;
+    if (explodeParts) explodeParts(state.explode);
+    if (updateOil) updateOil(dt, !!target.oil);
     if (!window.__PAUZE_FREEZE) state.spin += dt * target.spinSpeed;
 
     flip.position.set(state.x * halfWidthAtZero(), state.y, 0);
@@ -378,8 +487,10 @@ export function createScene(canvas, opts = {}) {
     flip.rotation.set(state.tiltX, 0, state.flip + state.tiltY * 0.3);
     spin.rotation.y = state.spin;
     const c = state.cap;
-    capObj.position.set(0, c * 0.2, -c * 0.05);
-    capObj.rotation.set(-c * 0.32, 0, 0);
+    // cap lifts, then sets down beside the object so the refill port stays visible
+    const lift = Math.min(1, c * 2), side = Math.max(0, c * 2 - 1);
+    capObj.position.set(side * 1.0, lift * 0.22 - side * 0.12 + (capObj.userData.explode || 0), side * 0.15);
+    capObj.rotation.set(0, 0, -side * 0.12);
     shadow.position.set(flip.position.x, state.y - 1.06 * state.scale, 0);
     shadow.scale.setScalar(state.scale * (1 - Math.abs(Math.sin(state.flip)) * 0.25));
 
@@ -395,7 +506,10 @@ export function createScene(canvas, opts = {}) {
   return {
     target,
     setColor,
-    snap() { for (const key of ['x', 'y', 'scale', 'flip', 'cap', 'mist']) state[key] = target[key]; },
+    get running() { return running; },
+    snap() { for (const key of ['x', 'y', 'scale', 'flip', 'cap', 'mist', 'explode']) state[key] = target[key]; },
+    addSpin(d) { state.spin += d; },
+    resize,
     stop() { running = false; },
   };
 }

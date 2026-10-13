@@ -30,11 +30,11 @@
       photo('assets/img/oil-macro.webp', '브러시드 브라스 드로퍼 클로즈업'), photo('assets/img/oils-lineup.webp', '시그니처 오일 4종'),
       photo('assets/img/life-hands.webp', '오일과 함께 쓰는 센트글라스')
     ]);
-    if (p.id === 'starter') return [
+    if (p.id === 'starter') return [{ viewer: true },
       photo('assets/img/poster.webp', 'PAUZE 센트글라스 스타터 세트'), photo('assets/img/box-open.webp', '스타터 세트 개봉 모습'), photo('assets/img/gift-ribbon.webp', '리본으로 포장한 기프트 박스'),
       cut(c.img, c.name, c.bg), cut(s.img, s.name, '#F1ECE2'), photo('assets/img/starter-set.webp', '스타터 세트 구성')
     ];
-    return [
+    return [{ viewer: true },
       cut(c.img, c.name, c.bg), photo('assets/img/life-flip.webp', '손으로 뒤집는 모습'), photo('assets/img/step-oil.webp', '오일을 넣는 모습'),
       photo('assets/img/detail-logo-macro.webp', '음각 로고 클로즈업'), photo('assets/img/detail-brass-macro.webp', '세라믹과 브라스 클로즈업'),
       photo('assets/img/detail-glass-macro.webp', '유리 챔버 클로즈업'), photo('assets/img/package.webp', '전용 패키지')
@@ -44,13 +44,52 @@
     var list = slides();
     if (!keepSlide) state.slide = 0;
     $('[data-track]').innerHTML = list.map(function (s, i) {
+      if (s.viewer) return '<figure class="g-slide viewer" data-viewer-slot aria-hidden="' + (i !== state.slide) + '"></figure>';
       return '<figure class="g-slide' + (s.cut ? ' cut' : '') + '" style="' + (s.tint ? '--tint:' + s.tint : '') + '" aria-hidden="' + (i !== state.slide) + '"><img src="' + s.src + '" alt="' + s.alt + '"' + (i ? ' loading="lazy"' : '') + '></figure>';
     }).join('');
     $('[data-thumbs]').innerHTML = list.map(function (s, i) {
+      if (s.viewer) return '<button type="button" role="tab" aria-selected="' + (i === state.slide) + '" class="v3d" data-slide="' + i + '" aria-label="3D 뷰어"><span>3D</span></button>';
       return '<button type="button" role="tab" aria-selected="' + (i === state.slide) + '" class="' + (s.cut ? 'cut' : '') + '" style="' + (s.tint ? '--tint:' + s.tint : '') + '" data-slide="' + i + '"><img src="' + s.src + '" alt=""></button>';
     }).join('');
     $$('[data-slide]').forEach(function (b) { b.onclick = function () { go(+b.dataset.slide); }; });
+    var slot = $('[data-viewer-slot]');
+    if (slot) { slot.appendChild(viewerEl()); if (viewer) viewer.setColor(P.color(state.color).hex); }
     go(state.slide, true);
+  }
+
+  /* ---------- 3D viewer (lazy-loaded) ---------- */
+  var viewer = null, vEl = null;
+  function viewerEl() {
+    if (vEl) return vEl;
+    vEl = document.createElement('div');
+    vEl.className = 'viewer3d is-loading';
+    vEl.innerHTML = '<canvas aria-label="센트글라스 3D 모델 — 드래그해서 돌려보세요"></canvas>' +
+      '<p class="v-load">3D 모델 불러오는 중…</p>' +
+      '<div class="v-ui" role="group" aria-label="3D 보기">' +
+      '<button type="button" data-v="flip">뒤집기</button><button type="button" data-v="oil">오일 넣기</button><button type="button" data-v="explode">분해도</button></div>' +
+      '<p class="v-hint">← 드래그해서 돌려보세요 →</p>';
+    var load = function (src) { return new Promise(function (res, rej) { var s = document.createElement('script'); s.src = src; s.onload = res; s.onerror = rej; document.body.appendChild(s); }); };
+    var start = function () {
+      load('assets/model/scentglass.glb.js').then(function () { return load('assets/js/viewer.bundle.js'); })
+        .then(function () { return window.PAUZE_VIEWER.mount($('canvas', vEl), { color: P.color(state.color).hex }); })
+        .then(function (v) { viewer = v; vEl.classList.remove('is-loading'); v.resize(); })
+        .catch(function () { vEl.classList.add('failed'); });
+    };
+    if (document.readyState === 'complete') setTimeout(start, 50); else addEventListener('load', start);
+    var on = { flip: false, oil: false, explode: false };
+    $$('[data-v]', vEl).forEach(function (b) {
+      b.onclick = function () {
+        if (!viewer) return;
+        var k = b.dataset.v;
+        if (k === 'flip') { if (on.explode) on.explode = viewer.explode(false); if (on.oil) on.oil = viewer.oil(false); on.flip = viewer.flip(); }
+        else if (k === 'oil') { if (on.explode) on.explode = viewer.explode(false); if (on.flip) on.flip = viewer.flip(); on.oil = viewer.oil(!on.oil); }
+        else { if (on.oil) on.oil = viewer.oil(false); if (on.flip) on.flip = viewer.flip(); on.explode = viewer.explode(!on.explode); }
+        $$('[data-v]', vEl).forEach(function (x) { x.classList.toggle('on', on[x.dataset.v]); });
+        b.blur();
+      };
+    });
+    addEventListener('resize', function () { if (viewer) viewer.resize(); });
+    return vEl;
   }
   function go(i, instant) {
     var n = $$('.g-slide').length;
@@ -116,7 +155,7 @@
     if (p.hasScent) q.set('scent', state.scent);
     try { history.replaceState(null, '', '?' + q.toString() + location.hash); } catch (e) { /* file:// */ }
   }
-  $$('[data-color]').forEach(function (b) { b.onclick = function () { state.color = b.dataset.color; renderOptions(); renderGallery(); }; });
+  $$('[data-color]').forEach(function (b) { b.onclick = function () { state.color = b.dataset.color; renderOptions(); renderGallery(true); if (viewer) viewer.setColor(P.color(state.color).hex); }; });
   $$('[data-scent]').forEach(function (b) {
     b.onclick = function () {
       state.scent = b.dataset.scent; renderOptions();
