@@ -41,6 +41,63 @@
       includes: ['시그니처 프래그런스 오일 10ml (향 택1)'] }
   ];
 
+  /* ==========================================================================
+   * 네이버 쇼핑 EP(Engine Page) 연동 필드
+   * --------------------------------------------------------------------------
+   * 자사몰 상품 DB → 네이버 쇼핑 상품 DB로 보내는 EP 3.0(TSV) 필드 매핑.
+   * - 이 객체 하나가 상세페이지 메타/구조화 데이터(JSON-LD)와 EP 피드(naver-ep.tsv,
+   *   tools/build-naver-ep.js)의 단일 원천(Single Source of Truth)이 된다.
+   * - 상품명(title) 구조:  [브랜드] [상품명] [핵심 속성] [구성/용량]
+   *   → 브랜드 검색과 카테고리 키워드(디퓨저·방향제) 검색에 동시에 노출되도록 설계.
+   *   → 과장 표현(최고, 1위, 특가!!)·특수문자 남용 금지 (네이버 상품명 가이드).
+   * - 옵션(컬러 4종)은 option_detail 로 전달하고 상품은 하나의 id 로 유지
+   *   → 리뷰/판매지수가 컬러별로 쪼개지지 않게 한다.
+   * - naver_category(카테고리 ID)는 스마트스토어/쇼핑파트너센터에서 조회 후 확정.
+   * ======================================================================== */
+  var SITE = 'https://pauze.netlify.app';   // 배포 도메인 확정 시 교체
+  var NAVER_EP = {
+    common: {
+      brand: 'PAUZE', maker: 'PAUZE', origin: '대한민국',
+      category_name1: '생활/건강', category_name2: '생활용품', category_name3: '방향제', category_name4: '디퓨저',
+      naver_category: '',            // TODO: 쇼핑파트너센터 카테고리 ID 매칭 후 입력
+      condition: '신상품', shipping: 0, // 0 = 무료배송 / 조건부는 delivery_detail 로 안내
+      delivery_detail: '5만원 이상 무료배송, 미만 3,000원'
+    },
+    object: {
+      title: 'PAUZE 센트글라스 무전원 아날로그 향기 타이머 디퓨저 오브제 125mm',
+      search_tag: ['향기타이머', '데스크테리어', '무전원디퓨저', '아날로그디퓨저', '책상디퓨저', '집중루틴', '집들이선물', '세라믹디퓨저', '조용한몰입', '센트글라스'],
+      option_detail: 'Misty Sage|Oatmeal Beige|Stone Gray|Dusty Rose'
+    },
+    starter: {
+      title: 'PAUZE 센트글라스 스타터 세트 향기 타이머 디퓨저 + 시그니처 오일 10ml 선물 패키지',
+      search_tag: ['디퓨저선물세트', '향기타이머', '데스크테리어', '취업선물', '집들이선물', '무전원디퓨저', '시그니처오일', '센트글라스', '향기루틴', '기프트세트'],
+      option_detail: 'Misty Sage|Oatmeal Beige|Stone Gray|Dusty Rose'
+    },
+    oil: {
+      title: 'PAUZE 시그니처 프래그런스 오일 10ml 센트글라스 전용 디퓨저 리필',
+      search_tag: ['디퓨저리필', '디퓨저오일', '프래그런스오일', '그린티향', '화이트티향', '무화과향', '라벤더향', '향기루틴', '센트글라스', '책상향기'],
+      option_detail: 'Green Tea & Cedar|White Tea & Neroli|Fig & Soft Woods|Lavender & Linen',
+      category_name4: '디퓨저 리필액'
+    }
+  };
+  function naverEp(id) {
+    var p = product(id), ep = NAVER_EP[id], c = NAVER_EP.common, r = (window.PAUZE && window.PAUZE.reviews) ? window.PAUZE.reviews.stats(id) : null;
+    return {
+      id: 'PZ-' + id.toUpperCase(), title: ep.title,
+      price_pc: p.sale, price_mobile: p.sale, normal_price: p.price,
+      link: SITE + '/product.html?id=' + id, mobile_link: SITE + '/product.html?id=' + id,
+      image_link: SITE + '/assets/img/ep/' + (id === 'object' ? 'scentglass' : id) + '.jpg',   // 1000x1000 JPG (EP 이미지 규격 대응)
+      category_name1: c.category_name1, category_name2: c.category_name2, category_name3: c.category_name3, category_name4: ep.category_name4 || c.category_name4,
+      naver_category: c.naver_category, condition: c.condition, brand: c.brand, maker: c.maker, origin: c.origin,
+      event_words: p.sale < p.price ? '런칭 기념 15% 할인' : '',
+      search_tag: ep.search_tag.slice(0, 10).join('|'),   // 최대 10개, '|' 구분
+      option_detail: ep.option_detail,
+      shipping: p.sale >= SHIPPING.freeOver ? 0 : SHIPPING.fee, delivery_detail: c.delivery_detail,
+      review_count: r ? r.count : 0,
+      npay_unable: 0                                       // 0 = 네이버페이 결제 가능
+    };
+  }
+
   var SHIPPING = { fee: 3000, freeOver: 50000 };
   var KEY = 'pauze_cart_v1';
 
@@ -89,5 +146,5 @@
 
   window.addEventListener('storage', function (e) { if (e.key === KEY) emit(); });
 
-  window.PAUZE = { COLORS: COLORS, SCENTS: SCENTS, PRODUCTS: PRODUCTS, SHIPPING: SHIPPING, won: won, off: off, product: product, color: color, scent: scent, itemLabel: itemLabel, itemImg: itemImg, cart: cart };
+  window.PAUZE = { SITE: SITE, naverEp: naverEp, NAVER_EP: NAVER_EP, COLORS: COLORS, SCENTS: SCENTS, PRODUCTS: PRODUCTS, SHIPPING: SHIPPING, won: won, off: off, product: product, color: color, scent: scent, itemLabel: itemLabel, itemImg: itemImg, cart: cart };
 })();

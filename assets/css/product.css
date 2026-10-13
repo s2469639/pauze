@@ -268,3 +268,46 @@ html { scroll-padding-top: 130px; }
 .cmp.is-us span { color: #d9c49b; }
 .cmp.is-us p { color: rgba(242, 238, 230, .78); }
 @media (max-width: 960px) { .cmp-grid { grid-template-columns: 1fr; } }
+
+/* CTA: 구매하기 + N Pay (네이버페이 브랜드 그린 #03C75A) */
+.bb-actions { grid-template-columns: 1fr 1fr; }
+.npay-btn { grid-column: 1 / -1; height: 56px; border: 0; border-radius: 99px; background: #03C75A; color: #fff; display: inline-flex; align-items: center; justify-content: center; gap: 6px; font: 600 16px var(--sans); cursor: pointer; transition: background .3s, transform .3s var(--ease); }
+.npay-btn:hover { background: #02b351; }
+.npay-btn:active { transform: scale(.98); }
+.npay-btn b { font-weight: 800; letter-spacing: -.01em; }
+.npay-mark { display: inline-grid; place-items: center; width: 22px; height: 22px; border-radius: 4px; background: #fff; color: #03C75A; font: 900 15px/1 var(--sans); }
+.npay-btn.sm { grid-column: auto; height: 40px; padding: 0 14px; font-size: 13px; }
+.npay-btn.sm .npay-mark { width: 18px; height: 18px; font-size: 12px; }
+.bb-prelaunch { margin: 12px 2px 0; font-size: 12px; color: var(--mute); }
+.bb-prelaunch b { font-weight: 600; color: var(--ink); }
+.buybar { gap: 8px; }
+.buybar > div { margin-right: auto; }
+
+/* pre-launch modal */
+.pl-modal { position: fixed; inset: 0; z-index: 110; display: grid; place-items: center; padding: 16px; background: rgba(30, 32, 28, 0); transition: background .35s; }
+.pl-modal.open { background: rgba(30, 32, 28, .5); }
+.pl-card { position: relative; width: min(460px, 100%); max-height: calc(100vh - 32px); overflow: auto; background: var(--ivory); border-radius: 24px; padding: 30px 28px 28px; transform: translateY(24px) scale(.97); opacity: 0; transition: transform .5s var(--ease), opacity .35s; }
+.pl-modal.open .pl-card { transform: none; opacity: 1; }
+.pl-card .x { position: absolute; top: 14px; right: 18px; background: none; border: 0; font: 300 30px/1 var(--en); cursor: pointer; }
+.pl-card h3 { font-size: 24px; margin-bottom: 8px; }
+.pl-sub { font-size: 14px; color: var(--mute); }
+.pl-pick { display: grid; grid-template-columns: 64px 1fr; gap: 14px; align-items: center; padding: 12px; border-radius: 14px; background: var(--paper); margin: 6px 0 18px; }
+.pl-pick img { width: 64px; height: 76px; object-fit: contain; }
+.pl-pick b { display: block; font: 500 15px var(--serif); }
+.pl-pick span { display: block; font-size: 12px; color: var(--mute); }
+.pl-pick em { font-style: normal; font: 500 15px var(--sans); }
+.pl-f { display: grid; gap: 6px; margin-bottom: 12px; }
+.pl-f span, .pl-ch legend { font-size: 12px; color: var(--mute); padding: 0; }
+.pl-f input { height: 48px; padding: 0 16px; border: 1px solid var(--line); border-radius: 12px; background: #fff; font: 400 15px var(--sans); color: var(--ink); }
+.pl-f input:focus { outline: none; border-color: var(--ink); }
+.pl-ch { border: 0; padding: 0; margin: 4px 0 14px; display: flex; gap: 8px; flex-wrap: wrap; }
+.pl-ch legend { margin-bottom: 6px; }
+.pl-ch input { position: absolute; opacity: 0; }
+.pl-ch span { display: block; padding: 9px 16px; border: 1px solid var(--line); border-radius: 99px; background: #fff; font-size: 13px; cursor: pointer; }
+.pl-ch input:checked + span { background: var(--ink); color: var(--ivory); border-color: var(--ink); }
+.pl-agree { display: flex; gap: 8px; align-items: flex-start; font-size: 12px; color: var(--mute); cursor: pointer; }
+.pl-agree input { margin-top: 3px; accent-color: var(--ink); }
+.pl-err { min-height: 1.4em; margin: 8px 0; font-size: 13px; color: #B65B47; }
+.pl-done-view { text-align: center; padding: 16px 0 6px; }
+.pl-done-view .done-mark { width: 72px; margin: 0 auto 18px; color: #03C75A; }
+.pl-done-view .btn { margin-top: 10px; }

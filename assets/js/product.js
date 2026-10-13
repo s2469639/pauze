@@ -155,7 +155,7 @@
     if (p.hasScent) q.set('scent', state.scent);
     try { history.replaceState(null, '', '?' + q.toString() + location.hash); } catch (e) { /* file:// */ }
   }
-  $$('[data-color]').forEach(function (b) { b.onclick = function () { state.color = b.dataset.color; renderOptions(); renderGallery(true); if (viewer) viewer.setColor(P.color(state.color).hex); }; });
+  $$('[data-color]').forEach(function (b) { b.onclick = function () { state.color = b.dataset.color; track('select_option', { option: 'color', value: state.color }); renderOptions(); renderGallery(true); if (viewer) viewer.setColor(P.color(state.color).hex); }; });
   $$('[data-scent]').forEach(function (b) {
     b.onclick = function () {
       state.scent = b.dataset.scent; renderOptions();
@@ -166,14 +166,68 @@
   });
   $$('[data-q]').forEach(function (b) { b.onclick = function () { state.qty = Math.min(9, Math.max(1, state.qty + +b.dataset.q)); renderOptions(); }; });
 
-  function add() { cart.add(p.id, state.color, state.qty, state.scent); }
+  function add() { cart.add(p.id, state.color, state.qty, state.scent); track('add_to_cart'); }
   $('[data-add]').onclick = function () {
     add();
     var label = P.itemLabel({ color: p.hasColor ? state.color : null, scent: p.hasScent ? state.scent : null });
     P.ui.toast(p.name + (label ? ' · ' + label : '') + ' — 장바구니에 담았어요');
     P.ui.open();
   };
-  $('[data-buy]').onclick = function () { add(); location.href = 'checkout.html'; };
+  /* ---------- 구매 CTA → 런칭 전 사전 알림 모달 ----------
+   * 실서비스 전환 시 교체 지점:
+   *   direct   → add() 후 checkout.html (자사몰 PG 결제)
+   *   npay*    → 네이버페이 주문형 API: 서버에서 주문서(상품 id·옵션·수량·가격) 생성 → 네이버페이 결제창 리다이렉트
+   *              → 결제 완료 콜백(returnUrl)에서 자사몰 주문 동기화
+   * 지금은 결제 대신 모달을 띄우고, 같은 주문 정보를 사전 알림 신청 데이터로 수집한다. */
+  $$('[data-buy]').forEach(function (b) { b.onclick = function () { openPrelaunch(b.dataset.cta || 'direct'); }; });
+  var pl = $('#prelaunch'), plForm = $('form', pl);
+  function selection() {
+    var label = P.itemLabel({ color: p.hasColor ? state.color : null, scent: p.hasScent ? state.scent : null });
+    return { label: label, img: P.itemImg({ color: p.hasColor ? state.color : null, scent: p.hasScent ? state.scent : null }) };
+  }
+  function openPrelaunch(source) {
+    var sel = selection();
+    $('[data-pl-img]', pl).src = sel.img;
+    $('[data-pl-name]', pl).textContent = p.name;
+    $('[data-pl-opt]', pl).textContent = (sel.label ? sel.label + ' · ' : '') + state.qty + '\u00a0개';
+    $('[data-pl-price]', pl).textContent = won(p.sale * state.qty);
+    plForm.product.value = p.id; plForm.option.value = sel.label; plForm.qty.value = state.qty; plForm.source.value = source;
+    $('.pl-form-view', pl).hidden = false; $('.pl-done-view', pl).hidden = true; $('.pl-err', pl).textContent = '';
+    pl.hidden = false; requestAnimationFrame(function () { pl.classList.add('open'); });
+    document.body.style.overflow = 'hidden';
+    track(source.indexOf('npay') === 0 ? 'npay_click' : 'begin_checkout', { source: source });
+    setTimeout(function () { plForm.name.focus(); }, 300);
+  }
+  function closePrelaunch() { pl.classList.remove('open'); document.body.style.overflow = ''; setTimeout(function () { pl.hidden = true; }, 350); }
+  pl.addEventListener('click', function (e) { if (e.target === pl || e.target.closest('[data-pl-close]')) closePrelaunch(); });
+  addEventListener('keydown', function (e) { if (e.key === 'Escape' && !pl.hidden) closePrelaunch(); });
+  plForm.phone.addEventListener('input', function () {
+    var d = this.value.replace(/\D/g, '').slice(0, 11);
+    this.value = d.length > 7 ? d.replace(/(\d{3})(\d{4})(\d+)/, '$1-$2-$3') : d.length > 3 ? d.replace(/(\d{3})(\d+)/, '$1-$2') : d;
+  });
+  plForm.addEventListener('submit', function (e) {
+    e.preventDefault();
+    var err = !plForm.name.value.trim() ? '이름을 입력해 주세요.' : !/^01\d-\d{3,4}-\d{4}$/.test(plForm.phone.value) ? '휴대폰 번호를 확인해 주세요.' : !plForm.agree.checked ? '개인정보 수집·이용에 동의해 주세요.' : '';
+    $('.pl-err', pl).textContent = err;
+    if (err) return;
+    var data = new FormData(plForm);
+    // Netlify Forms 수집 (배포 환경). 로컬/file:// 에서는 실패해도 브라우저에 기록하고 완료 화면을 보여준다.
+    fetch('/', { method: 'POST', headers: { 'Content-Type': 'application/x-www-form-urlencoded' }, body: new URLSearchParams(data).toString() }).catch(function () {});
+    try { var l = JSON.parse(localStorage.getItem('pauze_prelaunch') || '[]'); l.push({ product: p.id, option: plForm.option.value, qty: +plForm.qty.value, source: plForm.source.value, channel: plForm.channel.value, at: Date.now() }); localStorage.setItem('pauze_prelaunch', JSON.stringify(l)); } catch (x) {}
+    track('prelaunch_signup', { source: plForm.source.value, channel: plForm.channel.value });
+    $('[data-pl-done]', pl).textContent = plForm.name.value.trim() + '님, ' + p.name + (plForm.option.value ? ' (' + plForm.option.value + ')' : '') + ' 판매가 시작되면 ' + (plForm.channel.value === 'kakao' ? '카카오 알림톡' : '문자') + '으로 가장 먼저 알려드릴게요.';
+    $('.pl-form-view', pl).hidden = true; $('.pl-done-view', pl).hidden = false;
+    plForm.reset();
+  });
+
+  /* ---------- 전환 퍼널 측정 (GA4 / 네이버 프리미엄 로그분석 공통 dataLayer) ----------
+   * view_item → select_option → add_to_cart | begin_checkout | npay_click → prelaunch_signup
+   * N Pay 클릭 비중이 높으면 런칭 시 네이버페이 버튼을 1순위 CTA 로 올리는 근거가 된다. */
+  function track(event, params) {
+    window.dataLayer = window.dataLayer || [];
+    window.dataLayer.push(Object.assign({ event: event, item_id: 'PZ-' + p.id.toUpperCase(), item_name: p.name, price: p.sale, quantity: state.qty,
+      item_variant: P.itemLabel({ color: p.hasColor ? state.color : null, scent: p.hasScent ? state.scent : null }) }, params || {}));
+  }
   $('[data-bar-buy]').onclick = function () { $('#buy').scrollIntoView({ behavior: 'smooth', block: 'start' }); };
 
   /* ---------- detail content ---------- */
@@ -243,6 +297,34 @@
       gsap.fromTo(img, { scale: 1.15 }, { scale: 1, ease: 'none', scrollTrigger: { trigger: img.parentElement, start: 'top bottom', end: 'bottom top', scrub: true } });
     });
   }
+
+  /* ---------- SEO: 상품별 메타 + 구조화 데이터 ----------
+   * 네이버 EP 와 동일한 원천(P.naverEp)에서 title/description/JSON-LD 를 만든다 → 검색 노출 정보와 피드 정보 일치.
+   * (실서비스에서는 상품별 정적 URL + SSR 로 HTML 에 직접 렌더링해 크롤러 호환성을 높인다.) */
+  (function seo() {
+    var ep = P.naverEp(p.id), st = P.reviews ? P.reviews.stats(p.id) : null;
+    document.title = ep.title + ' | PAUZE';
+    var meta = function (attr, key, val) { var m = document.querySelector('meta[' + attr + '="' + key + '"]'); if (!m) { m = document.createElement('meta'); m.setAttribute(attr, key); document.head.appendChild(m); } m.setAttribute('content', val); };
+    var desc = p.desc + ' · ' + ep.search_tag.split('|').slice(0, 5).join(', ');
+    meta('name', 'description', desc);
+    meta('name', 'keywords', ep.search_tag.split('|').join(','));
+    meta('property', 'og:title', ep.title);
+    meta('property', 'og:description', desc);
+    meta('property', 'og:type', 'product');
+    meta('property', 'product:price:amount', String(p.sale));
+    meta('property', 'product:price:currency', 'KRW');
+    var canon = document.querySelector('link[rel=canonical]') || document.head.appendChild(Object.assign(document.createElement('link'), { rel: 'canonical' }));
+    canon.href = ep.link;
+    var ld = {
+      '@context': 'https://schema.org', '@type': 'Product', sku: ep.id, name: ep.title, brand: { '@type': 'Brand', name: ep.brand },
+      image: [ep.image_link], description: p.desc, category: [ep.category_name1, ep.category_name2, ep.category_name3, ep.category_name4].join(' > '),
+      offers: { '@type': 'Offer', price: p.sale, priceCurrency: 'KRW', availability: 'https://schema.org/PreOrder', url: ep.link },
+    };
+    if (p.hasColor) ld.color = P.COLORS.map(function (c) { return c.name; }).join(', ');
+    if (st && st.count) ld.aggregateRating = { '@type': 'AggregateRating', ratingValue: st.avg.toFixed(1), reviewCount: st.count };
+    var tag = document.createElement('script'); tag.type = 'application/ld+json'; tag.textContent = JSON.stringify(ld); document.head.appendChild(tag);
+  })();
+  track('view_item');
 
   renderOptions();
   renderGallery();

@@ -5,6 +5,8 @@
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <title>PAUZE Scentglass</title>
 <meta name="description" content="PAUZE Scentglass — 뒤집는 순간, 나만의 시간이 시작됩니다.">
+<!-- 네이버 서치어드바이저 사이트 소유 확인 (발급 후 content 입력) -->
+<meta name="naver-site-verification" content="">
 <meta name="theme-color" content="#F2EEE6">
 <meta property="og:title" content="PAUZE — Scentglass">
 <meta property="og:image" content="assets/img/og.jpg">
@@ -63,10 +65,21 @@
       </div>
 
       <div class="bb-total"><span>총 상품 금액</span><b data-total></b></div>
+      <!--
+        구매 동선 설계 (CTA 3단)
+        1) 장바구니  : 탐색형 고객 — 다른 상품과 함께 담고 비교
+        2) 구매하기   : 자사몰 결제 — 런칭 전에는 '사전 알림 신청' 모달로 대체
+        3) N Pay 구매 : 2030 이탈 방지 — 회원가입·카드 입력 없이 네이버 아이디로 결제하는 동선.
+                        모바일 첫 구매 고객의 가입/결제 단계 이탈을 줄이는 것이 목적.
+                        런칭 전에는 실제 결제(네이버페이 주문형 API) 대신 동일한 사전 알림 모달을 띄우고,
+                        어떤 버튼에서 신청했는지(source)를 함께 저장해 전환 의도를 측정한다.
+      -->
       <div class="bb-actions">
         <button type="button" class="btn btn-ghost" data-add>장바구니</button>
-        <button type="button" class="btn" data-buy>바로 구매</button>
+        <button type="button" class="btn" data-buy data-cta="direct">구매하기</button>
+        <button type="button" class="npay-btn" data-buy data-cta="npay" aria-label="네이버페이로 구매하기"><span class="npay-mark">N</span><b>Pay</b> 구매</button>
       </div>
+      <p class="bb-prelaunch">지금은 런칭 준비 중이에요. 구매 버튼을 누르면 <b>사전 알림 신청</b>으로 이어집니다.</p>
 
       <ul class="bb-info">
         <li><span>배송</span>결제 후 영업일 2–4일 내 출고 · 5만원 이상 무료배송</li>
@@ -311,6 +324,44 @@
 <div class="buybar" aria-hidden="true">
   <div><small data-bar-name></small><b data-bar-total></b></div>
   <button type="button" class="btn btn-sm" data-bar-buy>구매하기</button>
+  <button type="button" class="npay-btn sm" data-buy data-cta="npay-bar" aria-label="네이버페이로 구매하기"><span class="npay-mark">N</span><b>Pay</b></button>
+</div>
+
+<!--
+  런칭 전 사전 알림 신청 모달
+  - Netlify Forms 로 수집 (data-netlify). 배포 시 대시보드 > Forms 에서 신청 내역 확인.
+  - source(direct | npay | bar) 로 어떤 CTA 가 신청을 만들었는지 구분 → 런칭 후 결제수단 우선순위 판단 근거.
+-->
+<div class="pl-modal" id="prelaunch" hidden>
+  <div class="pl-card" role="dialog" aria-modal="true" aria-labelledby="plTitle">
+    <button type="button" class="x" data-pl-close aria-label="닫기">×</button>
+    <div class="pl-form-view">
+      <p class="eyebrow">Pre-launch</p>
+      <h3 id="plTitle">런칭 전 사전 알림 신청</h3>
+      <p class="pl-sub">센트글라스는 런칭 준비 중이에요. 판매가 시작되면 선택하신 옵션으로 가장 먼저 알려드릴게요.</p>
+      <div class="pl-pick"><img data-pl-img alt=""><div><b data-pl-name></b><span data-pl-opt></span><em data-pl-price></em></div></div>
+      <form name="prelaunch" method="POST" data-netlify="true" netlify-honeypot="bot-field" novalidate>
+        <input type="hidden" name="form-name" value="prelaunch">
+        <input type="hidden" name="product"><input type="hidden" name="option"><input type="hidden" name="qty"><input type="hidden" name="source">
+        <p hidden><label>bot <input name="bot-field"></label></p>
+        <label class="pl-f"><span>이름</span><input name="name" autocomplete="name" required></label>
+        <label class="pl-f"><span>휴대폰 번호</span><input name="phone" type="tel" inputmode="numeric" autocomplete="tel" placeholder="010-0000-0000" required></label>
+        <fieldset class="pl-ch"><legend>알림 받을 방법</legend>
+          <label><input type="radio" name="channel" value="kakao" checked><span>카카오 알림톡</span></label>
+          <label><input type="radio" name="channel" value="sms"><span>문자</span></label>
+        </fieldset>
+        <label class="pl-agree"><input type="checkbox" name="agree" required><span>(필수) 런칭 알림 발송을 위한 개인정보 수집·이용에 동의합니다.</span></label>
+        <p class="pl-err" role="alert"></p>
+        <button class="btn btn-block" type="submit" data-pl-submit>알림 신청하기</button>
+      </form>
+    </div>
+    <div class="pl-done-view" hidden>
+      <div class="done-mark" aria-hidden="true"><svg viewBox="0 0 80 80"><circle cx="40" cy="40" r="38" fill="none" stroke="currentColor" stroke-width="1.2"/><path d="M24 41l11 11 21-24" fill="none" stroke="currentColor" stroke-width="1.6"/></svg></div>
+      <h3>신청이 완료되었어요.</h3>
+      <p class="pl-sub" data-pl-done></p>
+      <button type="button" class="btn btn-ghost" data-pl-close>계속 둘러보기</button>
+    </div>
+  </div>
 </div>
 
 <!-- cart drawer -->
